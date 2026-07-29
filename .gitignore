@@ -1,0 +1,51 @@
+# Maven
+target/
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.rar
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# IDE - VS Code
+.vscode/
+*.code-workspace
+
+# IDE - Eclipse
+.settings/
+.project
+.classpath
+bin/
+
+# IDE - NetBeans
+nbproject/
+nb-configuration.xml
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Docker
+docker-compose.override.yml
+
+# Build
+build/
+dist/
