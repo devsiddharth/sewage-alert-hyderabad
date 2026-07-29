@@ -1,0 +1,91 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin, RETAIN_UNIQUE
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+
+#      routes:
+#        # Auth Service: Handles user registration, login, and JWT generation
+#        - id: auth-service
+#          uri: lb://AUTH-SERVICE
+#          predicates:
+#            - Path=/api/v1/auth/**
+#
+#        # User Service: Handles user profile CRUD operations
+#        - id: user-service
+#          uri: lb://USER-SERVICE
+#          predicates:
+#            - Path=/api/v1/users/**
+#
+#        # Complaint Service: Handles sewage complaint CRUD, images, GPS, and status tracking
+#        - id: complaint-service
+#          uri: lb://COMPLAINT-SERVICE
+#          predicates:
+#            - Path=/api/v1/complaints/**
+#
+#        # Community Service — Events: Awareness events and citizen registration
+#        - id: community-service-events
+#          uri: lb://COMMUNITY-SERVICE
+#          predicates:
+#            - Path=/api/v1/events/**
+#
+#        # Community Service — Articles: Educational articles about sewage, water, and environment
+#        - id: community-service-articles
+#          uri: lb://COMMUNITY-SERVICE
+#          predicates:
+#            - Path=/api/v1/articles/**
+#
+#        # Community Service — NGOs: Non-governmental organization information
+#        - id: community-service-ngos
+#          uri: lb://COMMUNITY-SERVICE
+#          predicates:
+#            - Path=/api/v1/ngos/**
+#
+#        # Community Service — Pipelines: Sewage pipeline infrastructure information
+#        - id: community-service-pipelines
+#          uri: lb://COMMUNITY-SERVICE
+#          predicates:
+#            - Path=/api/v1/pipelines/**
+#
+#        # Community Service — Treatment Plants: Sewage treatment plant information
+#        - id: community-service-treatment-plants
+#          uri: lb://COMMUNITY-SERVICE
+#          predicates:
+#            - Path=/api/v1/treatment-plants/**
+#
+#        # Community Service — Lakes: Lake information and restoration status
+#        - id: community-service-lakes
+#          uri: lb://COMMUNITY-SERVICE
+#          predicates:
+#            - Path=/api/v1/lakes/**
+#
+#        # Notification Service: Sends email notifications and provides notification history
+#        - id: notification-service
+#          uri: lb://NOTIFICATION-SERVICE
+#          predicates:
+#            - Path=/api/v1/notifications/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    com.netflix.discovery: OFF
