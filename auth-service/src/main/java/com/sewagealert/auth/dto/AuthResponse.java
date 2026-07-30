@@ -1,14 +1,14 @@
 package com.sewagealert.auth.dto;
 
 import com.sewagealert.auth.model.Role;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 
 @Getter
 @Setter
-@RequiredArgsConstructor
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class AuthResponse {
 
     private String token;

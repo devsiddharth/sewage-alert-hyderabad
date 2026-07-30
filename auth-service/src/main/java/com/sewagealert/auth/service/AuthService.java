@@ -10,6 +10,7 @@ import com.sewagealert.auth.model.Role;
 import com.sewagealert.auth.model.User;
 import com.sewagealert.auth.repository.UserRepository;
 import com.sewagealert.auth.security.JwtTokenProvider;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@Builder
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -47,7 +49,13 @@ public class AuthService {
 
         logger.info("New user registered: {} with role {}", user.getEmail(), user.getRole());
 
-        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole());
+        return AuthResponse.builder()
+                .token(token)
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .build();
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -62,8 +70,13 @@ public class AuthService {
 
         logger.info("User logged in: {}", user.getEmail());
 
-        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole());
-    }
+        return AuthResponse.builder()
+                .token(token)
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .build();        }
 
     public AuthResponse getProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -71,6 +84,11 @@ public class AuthService {
 
         String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail(), user.getRole());
 
-        return new AuthResponse(token, user.getId(), user.getName(), user.getEmail(), user.getRole());
-    }
+        return AuthResponse.builder()
+                .token(token)
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .build();        }
 }
