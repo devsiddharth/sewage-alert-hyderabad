@@ -1,0 +1,44 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  # Default profile uses H2 for development
+  datasource:
+    url: jdbc:h2:mem:sewagealert_auth
+    driver-class-name: org.h2.Driver
+    username: sidd_sqlDb
+    password: NewRoot@123
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+# JWT Configuration
+app:
+  jwt:
+    secret: c2V3YWdlLWFsZXJ0LWh5ZGVyYWJhZC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tZ2VuZXJhdGlvbi0yMDI2
+    expiration-ms: 86400000  # 24 hours
+
+logging:
+  level:
+    com.sewagealert.auth: DEBUG
+    org.springframework.security: INFO
