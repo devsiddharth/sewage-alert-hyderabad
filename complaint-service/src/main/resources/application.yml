@@ -1,0 +1,37 @@
+# Complaint Service Configuration — manages sewage complaint lifecycle
+
+server:
+  port: 8083  # Runs on port 8083
+
+spring:
+  application:
+    name: complaint-service  # Registered as COMPLAINT-SERVICE in Eureka
+
+  # Default datasource: Local MySQL (managed via MySQL Workbench).
+  # Create the database first: CREATE DATABASE sewagealert_complaints;
+  datasource:
+    url: jdbc:mysql://localhost:3306/sewagealert_complaints?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: NewRoot@123
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # Auto-creates/updates tables based on entity definitions — use "validate" in production
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    com.sewagealert.complaint: DEBUG

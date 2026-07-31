@@ -30,12 +30,12 @@ spring:
           predicates:
             - Path=/api/v1/users/**
 
-#        # Complaint Service: Handles sewage complaint CRUD, images, GPS, and status tracking
-#        - id: complaint-service
-#          uri: lb://COMPLAINT-SERVICE
-#          predicates:
-#            - Path=/api/v1/complaints/**
-#
+        # Complaint Service: Handles sewage complaint CRUD, images, GPS, and status tracking
+        - id: complaint-service
+          uri: lb://COMPLAINT-SERVICE
+          predicates:
+            - Path=/api/v1/complaints/**
+
 #        # Community Service — Events: Awareness events and citizen registration
 #        - id: community-service-events
 #          uri: lb://COMMUNITY-SERVICE
