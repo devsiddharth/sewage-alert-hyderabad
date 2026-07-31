@@ -17,19 +17,19 @@ spring:
             allowed-methods: "*"
             allowed-headers: "*"
 
-#      routes:
-#        # Auth Service: Handles user registration, login, and JWT generation
-#        - id: auth-service
-#          uri: lb://AUTH-SERVICE
-#          predicates:
-#            - Path=/api/v1/auth/**
-#
-#        # User Service: Handles user profile CRUD operations
-#        - id: user-service
-#          uri: lb://USER-SERVICE
-#          predicates:
-#            - Path=/api/v1/users/**
-#
+      routes:
+        # Auth Service: Handles user registration, login, and JWT generation
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/auth/**
+
+        # User Service: Handles user profile CRUD operations
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/v1/users/**
+
 #        # Complaint Service: Handles sewage complaint CRUD, images, GPS, and status tracking
 #        - id: complaint-service
 #          uri: lb://COMPLAINT-SERVICE
