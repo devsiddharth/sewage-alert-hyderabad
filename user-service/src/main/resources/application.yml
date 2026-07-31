@@ -1,0 +1,41 @@
+# User Service Configuration
+# Each microservice has its own port to run independently and registers with Eureka under its own name
+
+server:
+  port: 8082  # User Service runs on port 8082
+
+spring:
+  application:
+    name: user-service  # Name registered with Eureka — API Gateway routes using lb://USER-SERVICE
+
+  # Default profile: Uses H2 in-memory database for local development (no MySQL setup needed)
+  datasource:
+    url: jdbc:h2:mem:sewagealert_users  # Each service has its own database — avoids coupling
+    driver-class-name: org.h2.Driver
+    username: root
+    password: NewRoot@123
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # Auto-creates/updates tables based on entity definitions — use "validate" in production
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/  # Points to the Eureka Server running on port 8761
+    register-with-eureka: true   # Registers this service with Eureka so the Gateway can discover it
+    fetch-registry: true         # Fetches the registry to discover other services (for inter-service calls)
+
+logging:
+  level:
+    com.sewagealert.user: DEBUG

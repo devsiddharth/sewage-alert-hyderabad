@@ -5,11 +5,10 @@ spring:
   application:
     name: auth-service
 
-  # Default profile uses H2 for development
   datasource:
     url: jdbc:h2:mem:sewagealert_auth
     driver-class-name: org.h2.Driver
-    username: sidd_sqlDb
+    username: root
     password: NewRoot@123
 
   h2:
@@ -21,6 +20,7 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
@@ -32,11 +32,10 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
 
-# JWT Configuration
 app:
   jwt:
     secret: c2V3YWdlLWFsZXJ0LWh5ZGVyYWJhZC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tZ2VuZXJhdGlvbi0yMDI2
-    expiration-ms: 86400000  # 24 hours
+    expiration-ms: 86400000
 
 logging:
   level:
