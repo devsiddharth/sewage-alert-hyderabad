@@ -1,0 +1,22 @@
+# MySQL Profile Configuration
+# Activate this profile with --spring.profiles.active=mysql when running with a MySQL database
+
+spring:
+  datasource:
+    # Each microservice uses its own database — "sewagealert_users" belongs to user-service only
+    url: jdbc:mysql://localhost:3306/sewagealert_users?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: NewRoot@123
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  h2:
+    console:
+      enabled: false

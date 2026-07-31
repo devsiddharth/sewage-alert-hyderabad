@@ -1,6 +1,8 @@
 package com.sewagealert.auth.service.impl;
 
+import com.sewagealert.auth.client.UserServiceClient;
 import com.sewagealert.auth.dto.AuthResponse;
+import com.sewagealert.auth.dto.CreateUserProfileRequest;
 import com.sewagealert.auth.dto.LoginRequest;
 import com.sewagealert.auth.dto.RegisterRequest;
 import com.sewagealert.auth.exception.EmailAlreadyExistsException;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
+    private final UserServiceClient userServiceClient;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -45,6 +48,25 @@ public class AuthServiceImpl implements AuthService {
         );
 
         user = userRepository.save(user);
+
+        CreateUserProfileRequest profileRequest =
+                new CreateUserProfileRequest();
+
+        profileRequest.setAuthUserId(user.getId());
+        profileRequest.setName(user.getName());
+        profileRequest.setPhone(user.getPhone());
+
+        try {
+            userServiceClient.createProfile(profileRequest);
+        } catch (Exception ex) {
+            log.error("Failed to create user profile", ex);
+
+            // We'll decide how to handle this:
+            // - rollback
+            // - retry
+            // - compensation
+            // - event-based approach
+        }
 
         String token = jwtTokenProvider.generateToken(
                 user.getId(),
