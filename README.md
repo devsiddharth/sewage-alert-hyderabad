@@ -31,7 +31,7 @@ The platform enables users to:
                 Eureka Discovery Server
                         │
  ┌──────────────┬──────────────┬──────────────┐
- ▼              ▼              ▼              ▼
+ ▼            ▼              ▼              ▼
 Auth Service  User Service  Complaint Service  Community Service (Upcoming)
         │             ▲
         └────Feign────┘
