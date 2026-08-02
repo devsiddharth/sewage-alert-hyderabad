@@ -1,0 +1,87 @@
+# Community Service Configuration — manages events, articles, NGOs, pipelines, treatment plants, and lakes
+# Also integrates public external APIs: GNews (articles), Google Places (NGOs), Overpass (lakes),
+# and the Telangana Government ArcGIS open data service (treatment plants).
+
+server:
+  port: 8084  # Runs on port 8084
+
+spring:
+  application:
+    name: community-service  # Registered as COMMUNITY-SERVICE in Eureka
+
+  # Default: H2 in-memory database for development
+  datasource:
+    url: jdbc:h2:mem:sewagealert_community
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # OpenFeign timeouts per external client (allows tuning slow public APIs independently)
+  cloud:
+    openfeign:
+      client:
+        config:
+          news-api:
+            connect-timeout: 5000
+            read-timeout: 15000
+          google-places:
+            connect-timeout: 5000
+            read-timeout: 15000
+          overpass-api:
+            connect-timeout: 5000
+            read-timeout: 45000
+          telangana-arcgis:
+            connect-timeout: 10000
+            read-timeout: 30000
+
+# External API integrations (@ConfigurationProperties-bound — no scattered @Value annotations)
+community:
+  external:
+    news-api:
+      base-url: https://gnews.io
+      api-key: ${GNEWS_API_KEY:}          # GNews token (free signup at gnews.io)
+      language: en
+      country: in
+      default-page-size: 10
+      max-page-size: 10                    # GNews free tier caps at 10 per request
+      default-keyword: water
+    google-places:
+      base-url: https://maps.googleapis.com
+      api-key: ${GOOGLE_PLACES_API_KEY:}  # Google Cloud key with Places API enabled (billing)
+      max-results: 5                      # top N results enriched via Place Details
+    overpass:
+      base-url: https://overpass-api.de
+      bbox:                               # Hyderabad metropolitan area
+        south: 17.15
+        west: 78.20
+        north: 17.65
+        east: 78.75
+      max-elements: 200
+      query-timeout-seconds: 30
+    telangana-arcgis:
+      base-url: https://tgrac.telangana.gov.in
+      max-records: 1000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    com.sewagealert.community: DEBUG
