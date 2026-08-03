@@ -22,17 +22,17 @@ The platform enables users to:
 # 🏗️ System Architecture
 
 ```
-                React Frontend (In Progress)
+            React + TypeScript Frontend (frontend/)
                         │
                         ▼
-               Spring Cloud Gateway
+               Spring Cloud Gateway (:8080)
                         │
                         ▼
-                Eureka Discovery Server
+                Eureka Discovery Server (:8761)
                         │
  ┌──────────────┬──────────────┬──────────────┐
  ▼            ▼              ▼              ▼
-Auth Service  User Service  Complaint Service  Community Service (Upcoming)
+Auth Service  User Service  Complaint Service  Community Service
         │             ▲
         └────Feign────┘
               ▲
@@ -60,9 +60,14 @@ Auth Service  User Service  Complaint Service  Community Service (Upcoming)
 
 - MySQL
 
-## Frontend
+## Frontend (`frontend/`)
 
-- React (Planned)
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Recharts (analytics)
+- Lucide Icons
 
 ## Tools
 
@@ -169,6 +174,40 @@ Features
 Database
 
 - sewagealert_complaints
+
+---
+
+# 🚀 Running the Application
+
+## 1. Backend (microservices)
+
+Each service is a Spring Boot app. Start them in order (MySQL must be running
+and the databases from `docs/04 - Database Design` created):
+
+```bash
+# 1. Discovery server
+cd eureka-server && mvn spring-boot:run
+
+# 2. Backend services (each in its own terminal)
+cd auth-service && mvn spring-boot:run
+cd user-service && mvn spring-boot:run
+cd complaint-service && mvn spring-boot:run
+cd community-service && mvn spring-boot:run
+
+# 3. API Gateway (single entry point on :8080)
+cd api-gateway && mvn spring-boot:run
+```
+
+## 2. Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:5173 (proxies /api -> :8080)
+```
+
+See `frontend/README.md` for deployment, environment variables and the
+API integration notes.
 
 ---
 
