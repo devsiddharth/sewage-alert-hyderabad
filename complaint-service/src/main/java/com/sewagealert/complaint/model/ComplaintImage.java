@@ -17,7 +17,8 @@ public class ComplaintImage {
     private Complaint complaint;
 
     // imageUrl: Stores the file path or URL where the uploaded image is saved
-    @Column(name = "image_url", nullable = false)
+    @Lob
+    @Column(name = "image_url", nullable = false, columnDefinition = "LONGTEXT")
     private String imageUrl;
 
     @Column(name = "uploaded_at", updatable = false)
