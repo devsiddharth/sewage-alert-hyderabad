@@ -19,21 +19,32 @@ export function Modal({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Keep the latest onClose in a ref so the effect below only re-runs when the
+  // dialog opens/closes. Parents commonly pass inline arrows (e.g.
+  // onClose={() => setEditing(null)}), which get a new reference on every parent
+  // render — putting onClose in the dependency array would re-run the effect on
+  // every keystroke and re-focus the panel, stealing focus from inputs such as
+  // the Remarks textarea ("one character at a time" bug).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") onCloseRef.current();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
-    // Move focus into the dialog
+    // Move focus into the dialog once, when it opens
     const timer = window.setTimeout(() => panelRef.current?.focus(), 0);
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
       window.clearTimeout(timer);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
