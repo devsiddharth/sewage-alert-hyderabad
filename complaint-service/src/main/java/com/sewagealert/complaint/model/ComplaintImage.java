@@ -1,10 +1,17 @@
 package com.sewagealert.complaint.model;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "complaint_images")
+@Getter
+@Setter
+@NoArgsConstructor
 public class ComplaintImage {
 
     @Id
@@ -29,21 +36,8 @@ public class ComplaintImage {
         uploadedAt = LocalDateTime.now();
     }
 
-    public ComplaintImage() {}
 
     public ComplaintImage(String imageUrl) {
         this.imageUrl = imageUrl;
     }
-
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public Complaint getComplaint() { return complaint; }
-    public void setComplaint(Complaint complaint) { this.complaint = complaint; }
-
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-
-    public LocalDateTime getUploadedAt() { return uploadedAt; }
 }

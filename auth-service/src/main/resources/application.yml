@@ -36,6 +36,10 @@ app:
   jwt:
     secret: c2V3YWdlLWFsZXJ0LWh5ZGVyYWJhZC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tZ2VuZXJhdGlvbi0yMDI2
     expiration-ms: 86400000
+  admin:
+    name: Administrator
+    email: admin@sewagealert.com
+    password: Admin@123
 
 logging:
   level:

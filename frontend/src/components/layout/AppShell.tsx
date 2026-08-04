@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { useAuth } from "@/lib/auth";
@@ -38,7 +38,9 @@ export function AppShell({
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className={cn("flex h-16 items-center px-5", accent === "admin" ? "bg-brand-dark" : "bg-brand")}>
-        <Logo dark />
+        <Link to="/" aria-label="SewageAlert Hyderabad home" onClick={() => setOpen(false)}>
+          <Logo dark />
+        </Link>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Primary">
         {navItems.map((item) => (
@@ -166,7 +168,9 @@ export function AppShell({
           >
             <Menu className="h-5 w-5" />
           </button>
-          <Logo />
+          <Link to="/" aria-label="SewageAlert Hyderabad home">
+            <Logo />
+          </Link>
           <div className="w-9" />
         </header>
 
