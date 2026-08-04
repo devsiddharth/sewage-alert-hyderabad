@@ -22,6 +22,37 @@ const PRIORITIES: ComplaintPriority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
 type SortKey = "createdAt" | "updatedAt" | "priority";
 
+// Defined at module scope (not inside the component) so its identity is stable
+// across re-renders. A component declared inside the render body gets a new
+// identity on every render, forcing React to unmount/remount the table header
+// cells on each keystroke in the status-update modal.
+function SortHeader({
+  label,
+  k,
+  sort,
+  sortDir,
+  onToggle,
+}: {
+  label: string;
+  k: SortKey;
+  sort: SortKey;
+  sortDir: "asc" | "desc";
+  onToggle: (key: SortKey) => void;
+}) {
+  return (
+    <th className="px-4 py-3 font-semibold sm:px-6">
+      <button
+        onClick={() => onToggle(k)}
+        className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink"
+        aria-label={`Sort by ${label}`}
+      >
+        {label}
+        {sort === k ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : null}
+      </button>
+    </th>
+  );
+}
+
 export function ManageComplaints() {
   const [params] = useSearchParams();
   const { toast } = useToast();
@@ -133,15 +164,6 @@ export function ManageComplaints() {
     }
   };
 
-  const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
-    <th className="px-4 py-3 font-semibold sm:px-6">
-      <button onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 uppercase tracking-wide hover:text-ink" aria-label={`Sort by ${label}`}>
-        {label}
-        {sort === k ? (sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : null}
-      </button>
-    </th>
-  );
-
   return (
     <div className="space-y-6">
       <div>
@@ -192,10 +214,10 @@ export function ManageComplaints() {
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
-                  <SortHeader label="ID" k="createdAt" />
+                  <SortHeader label="ID" k="createdAt" sort={sort} sortDir={sortDir} onToggle={toggleSort} />
                   <th className="px-4 py-3 font-semibold sm:px-6">Title</th>
                   <th className="px-4 py-3 font-semibold sm:px-6">Status</th>
-                  <SortHeader label="Priority" k="priority" />
+                  <SortHeader label="Priority" k="priority" sort={sort} sortDir={sortDir} onToggle={toggleSort} />
                   <th className="px-4 py-3 font-semibold sm:px-6">Reported</th>
                   <th className="px-4 py-3 text-right font-semibold sm:px-6">Actions</th>
                 </tr>

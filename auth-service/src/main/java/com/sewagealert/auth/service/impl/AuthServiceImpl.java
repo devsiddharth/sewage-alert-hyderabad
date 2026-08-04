@@ -35,9 +35,7 @@ public class AuthServiceImpl implements AuthService {
             throw new EmailAlreadyExistsException("Email already registered");
         }
 
-        Role role = request.getRole() != null
-                ? request.getRole()
-                : Role.CITIZEN;
+        Role role = Role.CITIZEN;
 
         User user = new User(
                 request.getName(),
