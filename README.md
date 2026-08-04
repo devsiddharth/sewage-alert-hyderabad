@@ -211,6 +211,49 @@ API integration notes.
 
 ---
 
+# 🌐 Environment Variables
+
+The Auth Service reads the default administrator credentials from environment
+variables instead of hardcoding them. If a variable is not set, the local
+development default is used automatically.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ADMIN_NAME` | Default administrator display name | `Administrator` |
+| `ADMIN_EMAIL` | Default administrator login email | `admin@sewagealert.com` |
+| `ADMIN_PASSWORD` | Default administrator password | `Admin@123` |
+
+The values after the colon in `application.yml` (e.g. `${ADMIN_NAME:Administrator}`)
+are local development defaults only — set the environment variables to override them.
+
+## Setting Environment Variables
+
+### Windows CMD
+
+```cmd
+set ADMIN_NAME=Administrator
+set ADMIN_EMAIL=admin@sewagealert.com
+set ADMIN_PASSWORD=Admin@123
+```
+
+### PowerShell
+
+```powershell
+$env:ADMIN_NAME="Administrator"
+$env:ADMIN_EMAIL="admin@sewagealert.com"
+$env:ADMIN_PASSWORD="Admin@123"
+```
+
+### Linux/macOS
+
+```bash
+export ADMIN_NAME=Administrator
+export ADMIN_EMAIL=admin@sewagealert.com
+export ADMIN_PASSWORD=Admin@123
+```
+
+---
+
 # 🔄 Inter-Service Communication
 
 Current Communication
