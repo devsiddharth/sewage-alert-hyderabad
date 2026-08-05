@@ -240,3 +240,46 @@ export const PRIORITY_META: Record<ComplaintPriority, { label: string; tone: "sl
   HIGH: { label: "High", tone: "red" },
   CRITICAL: { label: "Critical", tone: "red" },
 };
+
+// ---------------------------------------------------------------------------
+// Complaint hotspot heatmap (admin)
+// ---------------------------------------------------------------------------
+
+export type DateRangePreset = "ALL" | "TODAY" | "LAST_7_DAYS" | "LAST_MONTH" | "CUSTOM";
+
+export interface HeatmapFilters {
+  /** Empty array = all statuses. */
+  statuses: ComplaintStatus[];
+  /** Empty array = all priorities. */
+  priorities: ComplaintPriority[];
+  preset: DateRangePreset;
+  /** yyyy-MM-dd, only used when preset === "CUSTOM". */
+  customFrom: string;
+  /** yyyy-MM-dd, only used when preset === "CUSTOM". */
+  customTo: string;
+}
+
+export const DEFAULT_HEATMAP_FILTERS: HeatmapFilters = {
+  statuses: [],
+  priorities: [],
+  preset: "ALL",
+  customFrom: "",
+  customTo: "",
+};
+
+export interface HighestArea {
+  key: string;
+  count: number;
+  lat: number;
+  lng: number;
+}
+
+export interface ComplaintAnalytics {
+  total: number;
+  pending: number;
+  inProgress: number;
+  resolved: number;
+  rejected: number;
+  avgResolutionDays: number | null;
+  highestArea: HighestArea | null;
+}
