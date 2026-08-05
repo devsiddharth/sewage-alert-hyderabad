@@ -33,3 +33,320 @@
     text-wrap: balance;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Complaint hotspot map — self-contained light/dark theme system.
+ *
+ * The page theme is driven by CSS custom properties scoped to .hotspot-page
+ * (defaults follow the OS preference; the page header has a manual toggle).
+ * Leaflet popups, controls and attribution are restyled through these tokens.
+ * ------------------------------------------------------------------------- */
+.hotspot-page {
+  --hp-bg: #f8fafc;
+  --hp-glass: rgba(255, 255, 255, 0.72);
+  --hp-glass-strong: rgba(255, 255, 255, 0.92);
+  --hp-border: rgba(15, 23, 42, 0.1);
+  --hp-text: #111827;
+  --hp-muted: #64748b;
+  --hp-accent: #0a2463;
+  --hp-accent-soft: rgba(10, 36, 99, 0.08);
+  --hp-map-bg: #e6eaef;
+  --hp-control-bg: rgba(255, 255, 255, 0.9);
+  --hp-control-border: rgba(15, 23, 42, 0.14);
+  --hp-attrib-bg: rgba(248, 250, 252, 0.85);
+  --hp-overlay: rgba(248, 250, 252, 0.55);
+  --hp-shadow: 0 8px 32px -12px rgba(10, 36, 99, 0.18);
+  color-scheme: light;
+}
+
+.hotspot-page.dark {
+  --hp-bg: #0b1220;
+  --hp-glass: rgba(15, 23, 42, 0.62);
+  --hp-glass-strong: rgba(15, 23, 42, 0.92);
+  --hp-border: rgba(148, 163, 184, 0.16);
+  --hp-text: #f1f5f9;
+  --hp-muted: #94a3b8;
+  --hp-accent: #93b4ff;
+  --hp-accent-soft: rgba(147, 180, 255, 0.14);
+  --hp-map-bg: #0e1626;
+  --hp-control-bg: rgba(15, 23, 42, 0.9);
+  --hp-control-border: rgba(148, 163, 184, 0.2);
+  --hp-attrib-bg: rgba(11, 18, 32, 0.8);
+  --hp-overlay: rgba(11, 18, 32, 0.55);
+  --hp-shadow: 0 8px 32px -12px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+.hotspot-page {
+  background: var(--hp-bg);
+  color: var(--hp-text);
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+/* --- text/colour helpers ------------------------------------------------ */
+.hp-text {
+  color: var(--hp-text);
+}
+.hp-muted {
+  color: var(--hp-muted);
+}
+.hp-accent {
+  color: var(--hp-accent);
+}
+.hp-accent-soft {
+  background: var(--hp-accent-soft);
+}
+.hp-border {
+  border-color: var(--hp-border);
+}
+
+/* --- glassmorphism surfaces --------------------------------------------- */
+.hp-glass {
+  background: var(--hp-glass);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--hp-border);
+  box-shadow: var(--hp-shadow);
+  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.hp-icon-brand {
+  background: var(--hp-accent-soft);
+  color: var(--hp-accent);
+}
+.hp-icon-amber {
+  background: rgba(245, 158, 11, 0.14);
+  color: #d97706;
+}
+.hp-icon-blue {
+  background: rgba(59, 130, 246, 0.14);
+  color: #2563eb;
+}
+.hp-icon-green {
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
+}
+.hp-icon-red {
+  background: rgba(239, 68, 68, 0.14);
+  color: #dc2626;
+}
+.hotspot-page.dark .hp-icon-amber {
+  color: #fbbf24;
+}
+.hotspot-page.dark .hp-icon-blue {
+  color: #60a5fa;
+}
+.hotspot-page.dark .hp-icon-green {
+  color: #34d399;
+}
+.hotspot-page.dark .hp-icon-red {
+  color: #f87171;
+}
+
+/* --- filter chips -------------------------------------------------------- */
+.hp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  border: 1px solid var(--hp-border);
+  cursor: pointer;
+  transition: all 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.hp-chip-idle {
+  background: transparent;
+  color: var(--hp-muted);
+}
+.hp-chip-idle:hover {
+  color: var(--hp-text);
+  border-color: var(--hp-accent);
+}
+.hp-chip-active {
+  background: var(--hp-accent-soft);
+  color: var(--hp-accent);
+  border-color: var(--hp-accent);
+}
+
+/* --- custom date range --------------------------------------------------- */
+.hp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.hp-field-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--hp-muted);
+}
+.hp-date-input {
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.625rem;
+  font-size: 0.75rem;
+  color: var(--hp-text);
+  background: var(--hp-glass-strong);
+  border: 1px solid var(--hp-border);
+  outline: none;
+  transition: border-color 150ms ease;
+}
+.hp-date-input:focus {
+  border-color: var(--hp-accent);
+}
+
+/* --- map chrome ----------------------------------------------------------- */
+.hp-map-wrap {
+  isolation: isolate; /* keep Leaflet's internal z-indexes inside the map card */
+}
+.hp-map-wrap .leaflet-container {
+  background: var(--hp-map-bg);
+  font-family: inherit;
+}
+
+.hp-map-wrap .leaflet-control-zoom a {
+  background: var(--hp-control-bg);
+  color: var(--hp-text);
+  border-color: var(--hp-control-border);
+}
+.hp-map-wrap .leaflet-control-zoom a:hover {
+  color: var(--hp-accent);
+}
+.hp-map-wrap .leaflet-control-attribution {
+  background: var(--hp-attrib-bg) !important;
+  color: var(--hp-muted) !important;
+  font-size: 10px;
+}
+.hp-map-wrap .leaflet-control-attribution a {
+  color: var(--hp-accent);
+}
+
+/* --- density legend ------------------------------------------------------- */
+.hp-legend {
+  position: absolute;
+  left: 0.75rem;
+  bottom: 1.75rem;
+  z-index: 500;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--hp-glass);
+  border: 1px solid var(--hp-border);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+.hp-legend-title {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--hp-muted);
+  margin-bottom: 0.375rem;
+}
+.hp-legend-gradient {
+  width: 130px;
+  height: 0.625rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(254, 240, 138, 0.95),
+    #fdba74,
+    #fb923c,
+    #ea580c,
+    #dc2626,
+    #7f1d1d
+  );
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* --- map overlays (loading / empty) --------------------------------------- */
+.hp-overlay {
+  background: var(--hp-overlay);
+  z-index: 600;
+}
+
+/* --- cluster markers ------------------------------------------------------- */
+.hp-cluster-wrap {
+  background: transparent;
+  border: none;
+}
+.hp-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 14px -2px rgba(10, 36, 99, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.hp-cluster-sm {
+  background: linear-gradient(135deg, #7692ff, #4f6ef7);
+}
+.hp-cluster-md {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+}
+.hp-cluster-lg {
+  background: linear-gradient(135deg, #dc2626, #7f1d1d);
+}
+
+/* --- complaint popups ------------------------------------------------------ */
+.hp-popup .leaflet-popup-content-wrapper {
+  background: var(--hp-glass-strong);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--hp-border);
+  border-radius: 1rem;
+  box-shadow: 0 16px 48px -12px rgba(10, 36, 99, 0.35);
+  color: var(--hp-text);
+}
+.hp-popup .leaflet-popup-tip {
+  background: var(--hp-glass-strong);
+  border: 1px solid var(--hp-border);
+}
+.hp-popup .leaflet-popup-content {
+  margin: 0.875rem 1rem;
+  width: 264px !important;
+}
+.hp-popup .leaflet-popup-close-button {
+  color: var(--hp-muted);
+  padding: 0.5rem 0.6rem 0 0;
+}
+.hp-popup .leaflet-popup-close-button:hover {
+  color: var(--hp-text);
+}
+
+.hp-popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.hp-popup-btn {
+  margin-top: 0.25rem;
+  border-radius: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(135deg, #0a2463, #12328a);
+  border: none;
+  cursor: pointer;
+  transition: filter 150ms ease, transform 150ms ease;
+}
+.hp-popup-btn:hover {
+  filter: brightness(1.15);
+}
+.hp-popup-btn:active {
+  transform: scale(0.98);
+}

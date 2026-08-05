@@ -8,6 +8,7 @@ import {
   Globe,
   HeartHandshake,
   Home,
+  Map as MapIcon,
   Settings,
   Waves,
 } from "lucide-react";
@@ -17,6 +18,7 @@ export function AdminLayout() {
   const nav: NavItem[] = [
     { to: "/", label: "Home", icon: <Globe className="h-4 w-4" />, end: true },
     { to: "/admin", label: "Dashboard", icon: <Home className="h-4 w-4" />, end: true },
+    { to: "/admin/hotspots", label: "Hotspot map", icon: <MapIcon className="h-4 w-4" /> },
     { to: "/admin/complaints", label: "Complaints", icon: <FileText className="h-4 w-4" /> },
     { to: "/admin/analytics", label: "Analytics", icon: <BarChart3 className="h-4 w-4" /> },
     { to: "/admin/community/events", label: "Events", icon: <CalendarDays className="h-4 w-4" /> },

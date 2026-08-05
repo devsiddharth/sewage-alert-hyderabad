@@ -19,6 +19,7 @@ import { Notifications } from "@/pages/dashboard/Notifications";
 import { Profile } from "@/pages/dashboard/Profile";
 
 import { AdminLayout } from "@/pages/admin/AdminLayout";
+import { HotspotMapPage } from "@/pages/admin/HotspotMapPage";
 import { AdminDashboard } from "@/pages/admin/AdminDashboard";
 import { ManageComplaints } from "@/pages/admin/ManageComplaints";
 import { AnalyticsPage } from "@/pages/admin/Analytics";
@@ -94,6 +95,7 @@ export default function App() {
               }
             >
               <Route index element={<AdminDashboard />} />
+              <Route path="hotspots" element={<HotspotMapPage />} />
               <Route path="complaints" element={<ManageComplaints />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="settings" element={<SettingsPage />} />
