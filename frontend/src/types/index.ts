@@ -10,6 +10,45 @@ export interface ApiResponse<T> {
   error: unknown;
 }
 
+/** Generic pagination envelope returned by the Notification Service. */
+export interface PagedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
+// Notification types — mirror the Notification Service NotificationType enum exactly.
+export type NotificationType =
+  | "COMPLAINT_CREATED"
+  | "COMPLAINT_ASSIGNED"
+  | "COMPLAINT_STATUS_UPDATED"
+  | "COMPLAINT_RESOLVED"
+  | "COMPLAINT_REJECTED"
+  | "COMPLAINT_REOPENED"
+  | "COMMUNITY_EVENT"
+  | "ARTICLE"
+  | "SYSTEM"
+  | "ADMIN";
+
+/** In-app notification served by GET /api/v1/notifications (NotificationResponse DTO). */
+export interface AppNotification {
+  id: number;
+  userId: number;
+  title: string;
+  message: string;
+  notificationType: NotificationType;
+  referenceId: number | null;
+  referenceType: string | null;
+  read: boolean;
+  readAt: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type Role = "CITIZEN" | "AUTHORITY" | "ADMIN";
 
 export interface AuthResponse {

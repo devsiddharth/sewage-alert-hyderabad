@@ -72,11 +72,11 @@ spring:
           predicates:
             - Path=/api/v1/lakes/**
 #
-#        # Notification Service: Sends email notifications and provides notification history
-#        - id: notification-service
-#          uri: lb://NOTIFICATION-SERVICE
-#          predicates:
-#            - Path=/api/v1/notifications/**
+        # Notification Service: Consumes RabbitMQ events and serves in-app notifications
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/notifications/**
 
 eureka:
   client:

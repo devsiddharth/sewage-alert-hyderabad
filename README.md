@@ -30,14 +30,18 @@ The platform enables users to:
                         ▼
                 Eureka Discovery Server (:8761)
                         │
- ┌──────────────┬──────────────┬──────────────┐
- ▼            ▼              ▼              ▼
-Auth Service  User Service  Complaint Service  Community Service
-        │             ▲
-        └────Feign────┘
-              ▲
-              │
-     Complaint Service
+ ┌──────────────┬──────────────┬──────────────┬──────────────┐
+ ▼            ▼              ▼              ▼              ▼
+Auth Service  User Service  Complaint Service  Community Service  Notification Service
+        │             ▲              │
+        └────Feign────┘              │ (publishes events)
+                          ┌──────────▼──────────┐
+                          │   RabbitMQ (AMQP)   │
+                          │ notification.exchange│
+                          └──────────┬──────────┘
+                                     │ (consumes events)
+                                     ▼
+                          Notification Service
 ```
 
 ---
@@ -55,6 +59,7 @@ Auth Service  User Service  Complaint Service  Community Service
 - Spring Data JPA
 - Hibernate
 - JWT Authentication
+- RabbitMQ (Spring AMQP) — event-driven notifications
 
 ## Database
 
@@ -170,10 +175,38 @@ Features
 - OpenFeign Integration
 - User Validation
 - Exception Handling
+- RabbitMQ Producer (publishes notification.* events)
 
 Database
 
 - sewagealert_complaints
+
+---
+
+## ✅ Notification Service
+
+Responsibilities
+
+- Consume domain events from RabbitMQ
+- Store notifications
+- Serve in-app notifications to users
+
+Features
+
+- RabbitMQ Consumer (topic exchange, DLQ, retries)
+- Event-driven storage (no service writes to its DB directly)
+- Paginated APIs, newest first
+- Read / unread tracking (single + bulk)
+- Soft delete
+- SLF4J logging + global exception handling
+
+Database
+
+- sewagealert_notifications
+
+Broker
+
+- RabbitMQ (docker-compose.yml in `notification-service/`)
 
 ---
 
@@ -185,6 +218,9 @@ Each service is a Spring Boot app. Start them in order (MySQL must be running
 and the databases from `docs/04 - Database Design` created):
 
 ```bash
+# 0. Message broker (RabbitMQ) — required by the notification flow
+cd notification-service && docker compose up -d   # Management UI: http://localhost:15672
+
 # 1. Discovery server
 cd eureka-server && mvn spring-boot:run
 
@@ -193,6 +229,7 @@ cd auth-service && mvn spring-boot:run
 cd user-service && mvn spring-boot:run
 cd complaint-service && mvn spring-boot:run
 cd community-service && mvn spring-boot:run
+cd notification-service && mvn spring-boot:run
 
 # 3. API Gateway (single entry point on :8080)
 cd api-gateway && mvn spring-boot:run
@@ -225,12 +262,28 @@ Complaint Service
         │
         ▼
 User Service
+
+Complaint Service ──(RabbitMQ: notification.*)──► Notification Service
 ```
 
 Implemented using
 
 - Spring Cloud OpenFeign
 - Eureka Service Discovery
+- RabbitMQ (Spring AMQP) for event-driven notifications
+
+## Event-Driven Notification Flow
+
+1. A citizen submits a complaint (or an authority changes its status).
+2. **Complaint Service** publishes a `NotificationEvent` to the `notification.exchange`
+   topic exchange (routing key e.g. `notification.created`, `notification.resolved`).
+3. **Notification Service** consumes the event, validates it, and stores an in-app
+   notification for the citizen in its own database.
+4. Failed messages are retried with exponential backoff; permanently failed messages
+   are parked in the dead letter queue `notification.dlq`.
+5. The citizen reads notifications through `GET /api/v1/notifications` (via the gateway).
+
+See `notification-service/README.md` for the full RabbitMQ topology and API reference.
 
 ---
 
@@ -252,6 +305,7 @@ Each microservice owns its own database.
 | Auth Service | sewagealert_auth |
 | User Service | sewagealert_users |
 | Complaint Service | sewagealert_complaints |
+| Notification Service | sewagealert_notifications |
 
 This follows the Database per Service pattern.
 

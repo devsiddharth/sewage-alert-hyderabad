@@ -24,6 +24,20 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
 
+  # RabbitMQ: Broker used to publish domain events (notification.created, notification.resolved, ...)
+  # consumed by the Notification Service. Publishing is fire-and-forget — a broker outage never
+  # blocks complaint creation/status updates (failures are logged by the producer).
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+# Notification event publishing configuration
+app:
+  rabbitmq:
+    exchange: notification.exchange
+
 # Eureka Client Configuration
 eureka:
   client:

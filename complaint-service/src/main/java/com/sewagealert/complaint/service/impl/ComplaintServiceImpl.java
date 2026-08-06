@@ -9,6 +9,7 @@ import com.sewagealert.complaint.exception.ComplaintNotFoundException;
 import com.sewagealert.complaint.exception.UserProfileNotFoundException;
 import com.sewagealert.complaint.exception.UserServiceUnavailableException;
 import com.sewagealert.complaint.model.*;
+import com.sewagealert.complaint.producer.NotificationEventProducer;
 import com.sewagealert.complaint.repository.ComplaintRepository;
 import com.sewagealert.complaint.service.ComplaintService;
 import feign.FeignException;
@@ -28,6 +29,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final UserServiceClient userServiceClient;
+    private final NotificationEventProducer notificationEventProducer;
 
     @Transactional
     @Override
@@ -56,6 +58,10 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         Complaint savedComplaint = complaintRepository.save(complaint);
         log.info("Complaint created with id: {} by authUserId: {}", savedComplaint.getId(), authUserId);
+
+        // Event-driven notification: publish to RabbitMQ so the Notification Service can store
+        // a confirmation notification. Fire-and-forget — never blocks or fails the request.
+        notificationEventProducer.publishComplaintCreated(savedComplaint);
 
         return ComplaintResponse.fromEntity(savedComplaint);
     }
@@ -109,6 +115,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
 
+        ComplaintStatus previousStatus = complaint.getStatus();
         complaint.setStatus(request.getStatus());
         if (request.getPriority() != null) {
             complaint.setPriority(request.getPriority());
@@ -124,6 +131,9 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         complaint = complaintRepository.save(complaint);
         log.info("Complaint {} status updated to {} by user: {}", complaintId, request.getStatus(), updatedBy);
+
+        // Event-driven notification: publish the status-change event to RabbitMQ (fire-and-forget)
+        notificationEventProducer.publishStatusChanged(complaint, previousStatus);
 
         return ComplaintResponse.fromEntity(complaint);
     }

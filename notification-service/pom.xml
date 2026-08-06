@@ -4,46 +4,56 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- Parent: Inherits Spring Boot and Cloud dependency management from the root project -->
     <parent>
         <groupId>com.sewagealert</groupId>
         <artifactId>sewage-alert-hyderabad</artifactId>
         <version>1.0.0</version>
     </parent>
 
-    <!-- complaint-service: Handles sewage complaint CRUD, image uploads, GPS data, status tracking, and history -->
-    <artifactId>complaint-service</artifactId>
-    <name>Complaint Service</name>
-    <description>Complaint Management Service for Sewage Alert Hyderabad</description>
+    <!-- notification-service: Consumes domain events from RabbitMQ and stores/retrieves user notifications.
+         Fully event-driven — no other service ever writes directly to the notification database. -->
+    <artifactId>notification-service</artifactId>
+    <name>Notification Service</name>
+    <description>Event-driven Notification Service for Sewage Alert Hyderabad</description>
 
     <dependencies>
+        <!-- Spring Boot Web: Provides REST APIs for retrieving notifications -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- Spring Data JPA: ORM for persisting notifications in MySQL -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
+        <!-- Validation: Jakarta Bean Validation for request DTO validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
+        <!-- Spring AMQP: RabbitMQ producer/consumer integration (topic exchange, DLQ, retries) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+        <!-- Eureka Client: Registers this service with the Eureka Discovery Server -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
-        <!-- OpenFeign: Declarative REST client for inter-service communication (User Service) -->
+        <!-- OpenFeign: Declarative REST client for inter-service communication (User Service).
+             Currently dormant — used by future delivery channels (email/SMS/push) to fetch
+             user contact details when delivering notifications outside the in-app inbox. -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-
-        <!-- Spring AMQP: Publishes domain events to RabbitMQ — the Notification Service consumes
-             them and stores notifications. Keeps this service decoupled from the notification DB. -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
         <!-- Lombok: Reduces boilerplate (@RequiredArgsConstructor, @Slf4j, DTO annotations) -->
@@ -60,6 +70,8 @@
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- H2: In-memory database for development and testing -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
