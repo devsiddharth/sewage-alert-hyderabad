@@ -1,0 +1,74 @@
+# Notification Service Configuration — consumes domain events from RabbitMQ and serves user notifications.
+#
+# RabbitMQ topology (declared by this service, see config/RabbitMqConfig.java):
+#   Exchange : notification.exchange (topic, durable)
+#   Queue    : notification.queue    (durable, x-dead-letter-exchange -> notification.dlx)
+#   DLQ      : notification.dlq      (permanently failed messages)
+#   Routing  : notification.* -> notification.queue  (covers all notification events)
+
+server:
+  port: 8085  # Runs on port 8085
+
+spring:
+  application:
+    name: notification-service  # Registered as NOTIFICATION-SERVICE in Eureka
+
+  # Default datasource: Local MySQL (managed via MySQL Workbench).
+  # Create the database first: CREATE DATABASE sewagealert_notifications;
+  datasource:
+    url: jdbc:mysql://localhost:3306/sewagealert_notifications?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: NewRoot@123
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # Auto-creates/updates tables based on entity definitions — use "validate" in production
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        # Container-level retry with exponential backoff: transient failures are retried
+        # before the message is rejected. After max-attempts the message is rejected with
+        # requeue=false and RabbitMQ routes it to the dead letter queue (notification.dlq).
+        retry:
+          enabled: true
+          initial-interval: 1000ms
+          multiplier: 2.0
+          max-attempts: 5
+          max-interval: 10000ms
+        default-requeue-rejected: false
+
+# RabbitMQ topology configuration (@ConfigurationProperties-bound — no scattered @Value annotations)
+app:
+  rabbitmq:
+    exchange: notification.exchange
+    queue: notification.queue
+    dlq-exchange: notification.dlx
+    dlq-queue: notification.dlq
+    dlq-routing-key: notification.dlq
+    routing-key-pattern: notification.*
+    delivery-exchange: notification.delivery.exchange
+    delivery-routing-key: notification.delivered
+
+# Eureka Client Configuration
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    com.sewagealert.notification: DEBUG

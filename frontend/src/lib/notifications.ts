@@ -1,83 +1,46 @@
-import type { Complaint } from "@/types";
+import { api } from "./api";
+import type { AppNotification, PagedResponse } from "@/types";
 
-export interface AppNotification {
-  id: string;
-  complaintId: number;
-  type: "created" | "assigned" | "updated" | "resolved" | "rejected";
-  title: string;
-  description: string;
-  at: string;
+// ---------------------------------------------------------------------------
+// Notification service — server-backed.
+//
+// The Notification Service (backend) is the single source of truth for in-app
+// notifications: it consumes RabbitMQ domain events, stores them, and serves
+// them through the gateway at /api/v1/notifications. Read state now lives on
+// the server (Notification.read / readAt), not in localStorage.
+//
+// Cross-component refresh: components dispatch the NOTIFICATIONS_EVENT window
+// event after mutating read state so the nav badge and the feed stay in sync.
+// ---------------------------------------------------------------------------
+
+export const NOTIFICATIONS_EVENT = "sa:notifications";
+
+const BASE = "/api/v1/notifications";
+
+/** Default page size for the feed (server clamps to 1..100). */
+export const NOTIFICATIONS_PAGE_SIZE = 50;
+
+/** GET /api/v1/notifications?page=&size= — paginated, newest first. */
+export async function fetchNotifications(page = 0, size = NOTIFICATIONS_PAGE_SIZE): Promise<PagedResponse<AppNotification>> {
+  return api.get<PagedResponse<AppNotification>>(`${BASE}?page=${page}&size=${size}`);
 }
 
-const READ_KEY = "sa_read_notifications";
-
-function getReadSet(): Set<string> {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(READ_KEY) ?? "[]") as string[]);
-  } catch {
-    return new Set();
-  }
+/** GET /api/v1/notifications/unread-count — powers the nav badge. */
+export async function fetchUnreadCount(): Promise<number> {
+  return api.get<number>(`${BASE}/unread-count`);
 }
 
-function saveReadSet(set: Set<string>) {
-  localStorage.setItem(READ_KEY, JSON.stringify(Array.from(set)));
+/** PATCH /api/v1/notifications/{id}/read — marks a single notification as read. */
+export async function markNotificationRead(id: number): Promise<AppNotification> {
+  return api.patch<AppNotification>(`${BASE}/${id}/read`);
 }
 
-/** Derives a notification feed from complaint status history (no backend notification service yet). */
-export function buildNotifications(complaints: Complaint[]): AppNotification[] {
-  const list: AppNotification[] = [];
-  for (const c of complaints) {
-    const id = (s: string, at: string) => `${c.id}-${s}-${at}`;
-
-    list.push({
-      id: id("CREATED", c.createdAt),
-      complaintId: c.id,
-      type: "created",
-      title: `Complaint #${c.id} submitted`,
-      description: c.title,
-      at: c.createdAt,
-    });
-
-    for (const h of c.history) {
-      const type =
-        h.status === "RESOLVED" ? "resolved" : h.status === "REJECTED" ? "rejected" : h.status === "IN_PROGRESS" ? "assigned" : "updated";
-      list.push({
-        id: id(h.status, h.updatedAt),
-        complaintId: c.id,
-        type,
-        title:
-          type === "resolved"
-            ? `Complaint #${c.id} resolved`
-            : type === "rejected"
-              ? `Complaint #${c.id} rejected`
-              : type === "assigned"
-                ? `Complaint #${c.id} is being worked on`
-                : `Complaint #${c.id} updated`,
-        description: h.remarks ?? `Status changed to ${h.status.replace("_", " ")}.`,
-        at: h.updatedAt,
-      });
-    }
-  }
-  return list.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+/** PATCH /api/v1/notifications/read-all — bulk marks every notification as read. */
+export async function markAllNotificationsRead(): Promise<number> {
+  return api.patch<number>(`${BASE}/read-all`);
 }
 
-export function isNotificationRead(id: string): boolean {
-  return getReadSet().has(id);
-}
-
-export function markNotificationRead(id: string) {
-  const set = getReadSet();
-  set.add(id);
-  saveReadSet(set);
-}
-
-export function markAllRead(ids: string[]) {
-  const set = getReadSet();
-  ids.forEach((id) => set.add(id));
-  saveReadSet(set);
-}
-
-export function unreadCount(ids: string[]): number {
-  const read = getReadSet();
-  return ids.filter((id) => !read.has(id)).length;
+/** Broadcasts a change so every mounted consumer (badge, feed) refetches. */
+export function notifyNotificationsChanged() {
+  window.dispatchEvent(new Event(NOTIFICATIONS_EVENT));
 }
