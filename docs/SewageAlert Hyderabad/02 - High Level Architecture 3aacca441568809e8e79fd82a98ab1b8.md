@@ -162,10 +162,40 @@ The architecture of Sewage Alert Hyderabad is designed to achieve the following 
 
 **Responsibilities**
 
+- Consume domain events from RabbitMQ
+- Store in-app notifications
 - Complaint Updates
 - Event Reminders
-- Email Notifications
 - System Alerts
+
+**Note** — Implemented as an event-driven consumer: notifications are created only from
+RabbitMQ events, never by direct database inserts from other services.
+</aside>
+
+### 🐇 **RabbitMQ (Message Broker)**
+
+<aside>
+💡
+
+**Purpose**
+
+- Event-driven inter-service communication
+
+**Responsibilities**
+
+- Topic exchange `notification.exchange`
+- Durable queue `notification.queue`
+- Dead letter queue `notification.dlq`
+- Retry with exponential backoff
+
+**Producers** — Complaint Service (`notification.created`, `notification.assigned`,
+`notification.status.updated`, `notification.resolved`, `notification.rejected`,
+`notification.reopened`).
+
+**Consumers** — Notification Service (stores notifications).
+
+**Future producers** — Community Service (event published, article published), Admin tooling
+(announcements).
 </aside>
 
 ### 🗄️ **MySQL Database**
@@ -231,8 +261,21 @@ The following steps describe how a typical request is processed within the Sewag
 2. The citizen selects an event and clicks **Register**.
 3. The request is sent through the API Gateway to the **Community Service**.
 4. The Community Service stores the registration details.
-5. The Notification Service sends a registration confirmation email.
+5. The Notification Service sends a registration confirmation (future-ready via RabbitMQ).
 6. The registered event appears in the citizen's profile.
+
+### Event-Driven Notification Flow
+
+1. The Complaint Service performs a domain action (complaint submitted, status updated).
+2. It publishes a `NotificationEvent` to the `notification.exchange` **topic exchange** with a
+   routing key such as `notification.created` or `notification.resolved`.
+3. RabbitMQ routes the message to the durable `notification.queue` via the `notification.*`
+   binding.
+4. The **Notification Service** consumes the event, validates the payload, and stores an
+   in-app notification in its own database (no other service can write to it).
+5. Transient failures are retried with exponential backoff; permanently failed messages are
+   parked in the dead letter queue `notification.dlq` for inspection/replay.
+6. The citizen fetches notifications through the gateway (`/api/v1/notifications`).
 
 ---
 

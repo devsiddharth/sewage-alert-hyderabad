@@ -1,0 +1,34 @@
+# RabbitMQ for the Sewage Alert Hyderabad notification flow.
+#
+# Usage:
+#   cd notification-service
+#   docker compose up -d
+#
+#   AMQP endpoint    : localhost:5672
+#   Management UI    : http://localhost:15672   (guest / guest)
+#
+# Queues/exchanges are declared by the Notification Service on startup
+# (see com.sewagealert.notification.config.RabbitMqConfig) — no manual setup needed.
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: sewagealert-rabbitmq
+    hostname: sewagealert-rabbitmq
+    ports:
+      - "5672:5672"      # AMQP protocol (used by Spring AMQP)
+      - "15672:15672"    # Management UI / HTTP API
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq   # persistent queues/exchanges across restarts
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  rabbitmq-data:

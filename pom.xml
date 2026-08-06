@@ -26,7 +26,7 @@
         <module>user-service</module>
         <module>complaint-service</module>
         <module>community-service</module>
-<!--        <module>notification-service</module>-->
+        <module>notification-service</module>
     </modules>
 
     <properties>
