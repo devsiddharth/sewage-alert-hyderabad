@@ -31,8 +31,8 @@ export function AdminLayout() {
   ];
 
   const footer: NavItem[] = [
-    { to: "/dashboard/profile", label: "My profile", icon: <Building2 className="h-4 w-4" /> },
+    { to: "/admin/profile", label: "My profile", icon: <Building2 className="h-4 w-4" /> },
   ];
 
-  return <AppShell navItems={nav} footerItems={footer} accent="admin" profilePath="/dashboard/profile" />;
+  return <AppShell navItems={nav} footerItems={footer} accent="admin" profilePath="/admin/profile" />;
 }
