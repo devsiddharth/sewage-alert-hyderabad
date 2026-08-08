@@ -19,11 +19,20 @@ export function AppShell({
   footerItems,
   accent = "admin",
   profilePath = "/dashboard/profile",
+  fullBleed = false,
 }: {
   navItems: NavItem[];
   footerItems?: NavItem[];
   accent?: "citizen" | "admin";
   profilePath?: string;
+  /**
+   * Full-bleed mode: the main content area drops the centered max-w container
+   * and its outer paddings, spans the full width next to the sidebar, and
+   * stretches to exactly the viewport height (scrolling is delegated to the
+   * page itself). Opt-in per route so every other page keeps the standard
+   * container layout.
+   */
+  fullBleed?: boolean;
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -133,7 +142,7 @@ export function AppShell({
   );
 
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className={cn("min-h-screen bg-canvas", fullBleed && "flex flex-col lg:h-screen lg:overflow-hidden")}>
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 lg:block">
         <div className={cn("h-full", accent === "admin" ? "bg-brand-dark" : "bg-brand")}>{sidebar}</div>
@@ -158,7 +167,7 @@ export function AppShell({
         </div>
       )}
 
-      <div className="lg:pl-64">
+      <div className={cn("lg:pl-64", fullBleed && "flex min-h-0 flex-1 flex-col")}>
         {/* Mobile top bar */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur lg:hidden">
           <button
@@ -174,7 +183,14 @@ export function AppShell({
           <div className="w-9" />
         </header>
 
-        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main
+          className={cn(
+            "mx-auto w-full",
+            fullBleed
+              ? "flex min-h-0 flex-1 flex-col"
+              : "max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+          )}
+        >
           <Outlet />
         </main>
       </div>

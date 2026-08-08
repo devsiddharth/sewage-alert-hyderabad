@@ -51,6 +51,7 @@
   --hp-accent: #0a2463;
   --hp-accent-soft: rgba(10, 36, 99, 0.08);
   --hp-map-bg: #e6eaef;
+  --hp-map-border: rgba(15, 23, 42, 0.12);
   --hp-control-bg: rgba(255, 255, 255, 0.9);
   --hp-control-border: rgba(15, 23, 42, 0.14);
   --hp-attrib-bg: rgba(248, 250, 252, 0.85);
@@ -68,7 +69,8 @@
   --hp-muted: #94a3b8;
   --hp-accent: #93b4ff;
   --hp-accent-soft: rgba(147, 180, 255, 0.14);
-  --hp-map-bg: #0e1626;
+  --hp-map-bg: #0a101f;
+  --hp-map-border: rgba(148, 163, 184, 0.22);
   --hp-control-bg: rgba(15, 23, 42, 0.9);
   --hp-control-border: rgba(148, 163, 184, 0.2);
   --hp-attrib-bg: rgba(11, 18, 32, 0.8);
@@ -203,10 +205,24 @@
 /* --- map chrome ----------------------------------------------------------- */
 .hp-map-wrap {
   isolation: isolate; /* keep Leaflet's internal z-indexes inside the map card */
+  border: 1px solid var(--hp-map-border);
+  box-shadow: var(--hp-shadow);
 }
 .hp-map-wrap .leaflet-container {
   background: var(--hp-map-bg);
   font-family: inherit;
+}
+
+/* Cross-fade between the light and dark tile layers on theme switch — both
+   layers stay mounted, so toggling never flashes a blank map. */
+.hp-map-wrap .leaflet-layer {
+  transition: opacity 300ms ease;
+}
+
+/* High-contrast dark tiles: punch up the roads/labels without washing out the
+   heatmap, for a modern analytics-dashboard look. */
+.hotspot-page.dark .hp-map-wrap .leaflet-tile-pane {
+  filter: brightness(1.07) contrast(1.14) saturate(1.08);
 }
 
 .hp-map-wrap .leaflet-control-zoom a {
@@ -254,12 +270,12 @@
   border-radius: 999px;
   background: linear-gradient(
     to right,
-    rgba(254, 240, 138, 0.95),
-    #fdba74,
+    rgba(37, 99, 235, 0.95),
+    #22d3ee,
+    #facc15,
     #fb923c,
-    #ea580c,
-    #dc2626,
-    #7f1d1d
+    #ef4444,
+    #991b1b
   );
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
@@ -275,28 +291,32 @@
   background: transparent;
   border: none;
 }
+/* Slightly translucent clusters so the heatmap glows through — the clusters
+   read as density accents instead of covering the map. */
 .hp-cluster {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   color: #fff;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 14px -2px rgba(10, 36, 99, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.45);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 .hp-cluster-sm {
-  background: linear-gradient(135deg, #7692ff, #4f6ef7);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.9), rgba(59, 130, 246, 0.9));
 }
 .hp-cluster-md {
-  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(249, 115, 22, 0.9));
 }
 .hp-cluster-lg {
-  background: linear-gradient(135deg, #dc2626, #7f1d1d);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.92), rgba(153, 27, 27, 0.95));
 }
 
 /* --- complaint popups ------------------------------------------------------ */

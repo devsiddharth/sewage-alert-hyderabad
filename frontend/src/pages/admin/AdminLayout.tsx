@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import {
   BarChart3,
   Building2,
@@ -15,6 +16,10 @@ import {
 import { AppShell, type NavItem } from "@/components/layout/AppShell";
 
 export function AdminLayout() {
+  // The hotspot map page opts into full-bleed mode so it fills the entire
+  // viewport next to the sidebar (no max-width container or outer gaps).
+  const { pathname } = useLocation();
+  const fullBleed = pathname === "/admin/hotspots";
   const nav: NavItem[] = [
     { to: "/", label: "Home", icon: <Globe className="h-4 w-4" />, end: true },
     { to: "/admin", label: "Dashboard", icon: <Home className="h-4 w-4" />, end: true },
@@ -34,5 +39,13 @@ export function AdminLayout() {
     { to: "/admin/profile", label: "My profile", icon: <Building2 className="h-4 w-4" /> },
   ];
 
-  return <AppShell navItems={nav} footerItems={footer} accent="admin" profilePath="/admin/profile" />;
+  return (
+    <AppShell
+      navItems={nav}
+      footerItems={footer}
+      accent="admin"
+      profilePath="/admin/profile"
+      fullBleed={fullBleed}
+    />
+  );
 }

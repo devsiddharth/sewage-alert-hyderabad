@@ -6,6 +6,10 @@ import { PixelCanvasLayer } from "@/components/maps/canvasLayer";
 // ---------------------------------------------------------------------------
 // HyderabadBoundaryLayer
 //
+// NOTE: not currently rendered by the hotspot map (the map shows the full metro
+// without a boundary overlay). Retained here, intentionally, so future
+// geographic/GHMC-boundary validation can reuse it without a refactor.
+//
 // Renders the Hyderabad administrative boundary on the map and mutes everything
 // outside it:
 //   - a translucent veil covers the whole viewport with the boundary "cut out"

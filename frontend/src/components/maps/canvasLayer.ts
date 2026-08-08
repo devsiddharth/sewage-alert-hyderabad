@@ -1,7 +1,7 @@
 import * as L from "leaflet";
 
 // ---------------------------------------------------------------------------
-// Shared base for pixel-space canvas overlays (heat layer, boundary mask).
+// Shared base for pixel-space canvas overlays (heat layer).
 //
 // The canvas is appended to Leaflet's overlayPane and redrawn whenever the map
 // view settles (moveend / zoomend / resize, debounced). During pans the canvas
