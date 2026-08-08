@@ -1,31 +1,36 @@
 // ---------------------------------------------------------------------------
 // Hyderabad map configuration
 //
-// The map is locked to the Hyderabad municipal region:
+// The map is centered on Hyderabad but framed wide enough to show the whole
+// metro area plus the surrounding districts (Medchal, Rangareddy, Sangareddy):
 //   - default center = centroid of the district boundary
-//   - maxBounds = padded metro rectangle (complaints may fall slightly outside
-//     the district polygon, e.g. Quthbullapur), panning is clamped here
-//   - zoom limits keep the view city-scale — no zooming out to India/world
+//   - maxBounds = generously padded metro rectangle so surrounding regions stay
+//     reachable while panning stays clamped well short of a subcontinent view
+//   - zoom limits start at a city-wide overview (11) and allow zooming out to
+//     the wider region (9) for context
+//
+// Note: with Leaflet's default zoomSnap=1, zoom values are rounded to whole
+// numbers, so the initial zoom must be an integer to actually take effect.
 // ---------------------------------------------------------------------------
 
 /** Approximate center of Hyderabad (from the boundary centroid). */
 export const HYDERABAD_CENTER: [number, number] = [17.41443, 78.4688];
 
-/** Initial zoom when the map first loads. */
-export const DEFAULT_ZOOM = 12.5;
+/** Initial zoom when the map first loads — a metro-wide overview. */
+export const DEFAULT_ZOOM = 11;
 
-/** Hard zoom limits — the user can never zoom out to a subcontinent view. */
-export const MIN_ZOOM = 10;
-export const MAX_ZOOM = 17;
+/** Hard zoom limits — region context at the outer edge, street level at the inner. */
+export const MIN_ZOOM = 9;
+export const MAX_ZOOM = 18;
 
 /**
- * Navigation bounds for the whole Hyderabad metro region (padded well beyond
- * the municipal polygon so nearby complaints remain reachable, but far tighter
- * than India).
+ * Navigation bounds for the wider Hyderabad metro (padded well beyond the
+ * municipal polygon so surrounding regions and nearby complaints remain
+ * reachable, but far tighter than India).
  */
 export const HYDERABAD_BOUNDS: [[number, number], [number, number]] = [
-  [17.15, 78.05],
-  [17.65, 78.8],
+  [17.0, 77.85],
+  [17.8, 79.0],
 ];
 
 /** Tile layer URLs — light (Voyager) and dark (Dark Matter), both CARTO/OSM. */

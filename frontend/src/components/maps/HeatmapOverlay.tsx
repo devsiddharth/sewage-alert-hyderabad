@@ -9,6 +9,8 @@ import {
   HEAT_POINT_ALPHA,
   HEAT_PULSE_BOOST,
   HEAT_PULSE_PERIOD_MS,
+  HEAT_RADIUS_MAX_PX,
+  HEAT_RADIUS_MIN_PX,
   HEAT_REFERENCE_ZOOM,
   isPointVisible,
   type HeatPoint,
@@ -22,8 +24,8 @@ import { clamp, PixelCanvasLayer } from "@/components/maps/canvasLayer";
 // offscreen canvas ("lighter" compositing), so nearby complaints naturally
 // blend into smooth, continuous hotspots — no fixed circles anywhere.
 //
-// The accumulated luminance is then mapped per-pixel through the yellow →
-// orange → red → dark-red ramp (see lib/heatmap.ts). A requestAnimationFrame
+// The accumulated luminance is then mapped per-pixel through the blue → cyan →
+// yellow → orange → red ramp (see lib/heatmap.ts). A requestAnimationFrame
 // loop slowly cross-fades the base frame against a boosted frame so hotspots
 // gently "breathe", exactly like a live complaint region.
 //
@@ -118,10 +120,16 @@ export class HeatLayer extends PixelCanvasLayer {
     actx.clearRect(0, 0, aw, ah);
 
     const zoom = map.getZoom();
-    const radius = clamp(
-      (HEAT_BASE_RADIUS_PX * map.getZoomScale(HEAT_REFERENCE_ZOOM, zoom)) / scale,
-      2,
-      30
+    // Clamp the glow in screen space first, then divide by the accumulation
+    // resolution — the visible radius never exceeds HEAT_RADIUS_MAX_PX on
+    // screen, so street-level markers stay legible on any layout size.
+    const radius = Math.max(
+      1,
+      clamp(
+        HEAT_BASE_RADIUS_PX * map.getZoomScale(HEAT_REFERENCE_ZOOM, zoom),
+        HEAT_RADIUS_MIN_PX,
+        HEAT_RADIUS_MAX_PX
+      ) / scale
     );
     const b = map.getBounds().pad(0.12);
 
@@ -156,9 +164,9 @@ export class HeatLayer extends PixelCanvasLayer {
     // The accumulation canvas stores premultiplied pixels, so the accumulated
     // intensity lives in the ALPHA channel (read-back RGB is always white for
     // white gradients). Map that alpha directly through the ramp's soft knee +
-    // gamma: a lone complaint's core (alpha ≈ HEAT_POINT_ALPHA) lands on light
-    // yellow and only saturated cores (alpha clamped to 1) reach dark red — an
-    // absolute scale, so sparse datasets stay yellow as specified.
+    // gamma: a lone complaint's core (alpha ≈ HEAT_POINT_ALPHA) lands on blue
+    // and only saturated cores (alpha clamped to 1) reach red — an absolute
+    // scale, so sparse datasets stay cool as specified.
     this._applyPulse(performance.now());
   }
 
