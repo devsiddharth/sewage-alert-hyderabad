@@ -28,8 +28,8 @@ function clusterIcon(cluster: L.MarkerCluster): L.DivIcon {
   return L.divIcon({
     html: `<div class="hp-cluster hp-cluster-${size}">${count}</div>`,
     className: "hp-cluster-wrap",
-    iconSize: L.point(44, 44),
-    iconAnchor: L.point(22, 22),
+    iconSize: L.point(36, 36),
+    iconAnchor: L.point(18, 18),
   });
 }
 
@@ -74,7 +74,9 @@ export const ComplaintMarkers = memo(function ComplaintMarkers({
   return (
     <MarkerClusterGroup
       chunkedLoading
-      maxClusterRadius={55}
+      // Larger radius → fewer, bigger clusters at city zoom so the heatmap
+      // stays the visual hero and the clusters read as density accents.
+      maxClusterRadius={65}
       // Keep clustering active at city zoom levels; only dissolve into
       // individual markers at close range so thousands of complaints never
       // flood the React tree at once.

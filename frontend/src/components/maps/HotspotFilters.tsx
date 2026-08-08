@@ -50,7 +50,10 @@ export function HotspotFilters({
   const { statuses, priorities, preset, customFrom, customTo } = filters;
 
   return (
-    <aside className="hp-glass flex h-fit flex-col gap-5 rounded-2xl p-4 lg:sticky lg:top-6">
+    // On desktop the panel fills its grid column (lg:h-full) so it visually
+    // matches the map height; the options block below scrolls internally when
+    // the viewport is too short instead of overflowing the page.
+    <aside className="hp-glass flex h-fit flex-col gap-5 rounded-2xl p-4 lg:h-full">
       {/* Header (always visible) */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -84,7 +87,7 @@ export function HotspotFilters({
         <span className={cn("transition-transform", open && "rotate-180")}>▾</span>
       </button>
 
-      <div className={cn("space-y-5", !open && "hidden lg:block")}>
+      <div className={cn("space-y-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto", !open && "hidden lg:block")}>
         {/* Status */}
         <section>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide hp-muted">Status</p>

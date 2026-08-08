@@ -3,6 +3,7 @@ import { AlertTriangle, Moon, RefreshCw, Sun } from "lucide-react";
 import { useComplaintsLive } from "@/hooks/useComplaintsLive";
 import { useHeatmapFilters } from "@/hooks/useHeatmapFilters";
 import { computeComplaintAnalytics } from "@/utils/complaintAnalytics";
+import { heatWeightForPriority } from "@/lib/heatmap";
 import { reverseGeocodeArea } from "@/services/geocode";
 import { HotspotStats } from "@/components/maps/HotspotStats";
 import { HotspotFilters } from "@/components/maps/HotspotFilters";
@@ -43,10 +44,14 @@ export function HotspotMapPage() {
   );
   const [detailId, setDetailId] = useState<number | null>(null);
 
-  // Heat points — only lat/lng, memoized so the canvas layer never re-renders
-  // the React tree when filters change.
+  // Heat points — lat/lng plus a priority-based weight so CRITICAL complaints
+  // saturate the density ramp faster and glow hotter than LOW ones. Memoized so
+  // the canvas layer never re-renders the React tree when filters change.
   const heatPoints = useMemo(
-    () => (filtered ?? EMPTY_LIST).filter(hasValidCoords).map((c) => ({ lat: c.latitude, lng: c.longitude })),
+    () =>
+      (filtered ?? EMPTY_LIST)
+        .filter(hasValidCoords)
+        .map((c) => ({ lat: c.latitude, lng: c.longitude, weight: heatWeightForPriority(c.priority) })),
     [filtered]
   );
 
@@ -75,8 +80,22 @@ export function HotspotMapPage() {
 
   const openComplaint = useCallback((id: number) => setDetailId(id), []);
 
+  // Full-bleed layout: the page fills the entire admin viewport (the shell
+  // drops its max-width container on this route). It is a flex column where
+  // the header/stats stay at their natural height and the filters+map row
+  // (flex-1) absorbs all remaining vertical space — no gaps anywhere.
+  //
+  // On desktop the page is its own scroll container, so while the details
+  // modal is open its overflow is locked (the modal's body-scroll lock no
+  // longer applies to this internal container).
   return (
-    <div className={cn("hotspot-page min-h-[80vh] space-y-5", dark && "dark")}>
+    <div
+      className={cn(
+        "hotspot-page min-h-screen space-y-4 p-4 sm:p-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:gap-4 lg:space-y-0",
+        detailId !== null ? "lg:overflow-hidden" : "lg:overflow-y-auto",
+        dark && "dark"
+      )}
+    >
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -134,8 +153,9 @@ export function HotspotMapPage() {
       {/* Analytics strip */}
       <HotspotStats analytics={analytics} loading={loading} areaName={areaName} />
 
-      {/* Filters + map */}
-      <div className="grid gap-5 lg:grid-cols-[300px_1fr]">
+      {/* Filters + map — flex-1 + min-h-0 lets the row (and the map inside it)
+          stretch to fill every pixel of the remaining viewport height. */}
+      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr]">
         <HotspotFilters
           filters={filters}
           activeCount={activeCount}
