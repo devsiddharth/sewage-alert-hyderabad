@@ -46,6 +46,21 @@
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+        <!-- Cloudinary: Object storage for complaint images. Images are uploaded here and only
+             the returned URLs are persisted in MySQL (no Base64 payloads in the database). -->
+        <dependency>
+            <groupId>com.cloudinary</groupId>
+            <artifactId>cloudinary-http5</artifactId>
+            <version>2.4.0</version>
+        </dependency>
+
+        <!-- Test: JUnit 5, Mockito, AssertJ and MockMvc for the storage/service/controller tests -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Lombok: Reduces boilerplate (@RequiredArgsConstructor, @Slf4j, DTO annotations) -->
         <dependency>
             <groupId>org.projectlombok</groupId>

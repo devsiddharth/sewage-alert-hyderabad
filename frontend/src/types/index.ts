@@ -107,12 +107,14 @@ export interface Complaint {
   updatedAt: string;
 }
 
+// Complaint creation is now a multipart/form-data upload: the form fields below plus
+// binary image files under the "images" part (max 4). The backend uploads the files to
+// object storage and persists only the returned URLs. This type models the form fields.
 export interface ComplaintRequest {
   title: string;
   description: string;
   latitude: number;
   longitude: number;
-  imageUrls?: string[];
 }
 
 export interface ComplaintStatusRequest {

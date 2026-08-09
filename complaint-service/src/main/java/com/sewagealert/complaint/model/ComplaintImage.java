@@ -23,9 +23,9 @@ public class ComplaintImage {
     @JoinColumn(name = "complaint_id", nullable = false)
     private Complaint complaint;
 
-    // imageUrl: Stores the file path or URL where the uploaded image is saved
-    @Lob
-    @Column(name = "image_url", nullable = false, columnDefinition = "LONGTEXT")
+    // imageUrl: Public object-storage URL of the uploaded image (e.g. Cloudinary).
+    // Only URLs are persisted — image bytes are never stored in the database.
+    @Column(name = "image_url", nullable = false, length = 2048)
     private String imageUrl;
 
     @Column(name = "uploaded_at", updatable = false)

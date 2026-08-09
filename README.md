@@ -263,6 +263,28 @@ development default is used automatically.
 The values after the colon in `application.yml` (e.g. `${ADMIN_NAME:Administrator}`)
 are local development defaults only — set the environment variables to override them.
 
+## Cloudinary (Complaint Service)
+
+Complaint images are uploaded to **Cloudinary** object storage; only the returned
+URLs are stored in MySQL (no Base64 image payloads in the database). The complaint
+service reads these variables via `application.yml` — **set them before starting
+`complaint-service`**, otherwise image uploads fail at runtime:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name | *(empty)* |
+| `CLOUDINARY_API_KEY` | Cloudinary API key | *(empty)* |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret | *(empty)* |
+
+```bash
+# Linux/macOS
+export CLOUDINARY_CLOUD_NAME=your-cloud
+export CLOUDINARY_API_KEY=your-key
+export CLOUDINARY_API_SECRET=your-secret
+```
+
+Never commit real credentials — they live in your environment, not in Git.
+
 ## Setting Environment Variables
 
 ### Windows CMD

@@ -5,6 +5,11 @@ spring:
   application:
     name: api-gateway
 
+  # Raised codec buffer so multipart complaint-image uploads (up to 40 MB requests)
+  # can pass through the gateway without DataBufferLimitException.
+  codec:
+    max-in-memory-size: 40MB
+
   cloud:
     gateway:
       default-filters:

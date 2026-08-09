@@ -1,24 +1,33 @@
 package com.sewagealert.complaint.service.impl;
 
 import com.sewagealert.complaint.client.UserServiceClient;
+import com.sewagealert.complaint.config.UploadProperties;
 import com.sewagealert.complaint.dto.ComplaintRequest;
 import com.sewagealert.complaint.dto.ComplaintResponse;
 import com.sewagealert.complaint.dto.ComplaintStatusRequest;
 import com.sewagealert.complaint.dto.UserProfileResponse;
 import com.sewagealert.complaint.exception.ComplaintNotFoundException;
+import com.sewagealert.complaint.exception.InvalidImageException;
 import com.sewagealert.complaint.exception.UserProfileNotFoundException;
 import com.sewagealert.complaint.exception.UserServiceUnavailableException;
 import com.sewagealert.complaint.model.*;
 import com.sewagealert.complaint.producer.NotificationEventProducer;
 import com.sewagealert.complaint.repository.ComplaintRepository;
 import com.sewagealert.complaint.service.ComplaintService;
+import com.sewagealert.complaint.storage.ImageStorageService;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,19 +36,59 @@ import java.util.stream.Collectors;
 // ComplaintServiceImpl: Core business logic for complaint lifecycle — creation, status updates, retrieval, and deletion
 public class ComplaintServiceImpl implements ComplaintService {
 
+    /** Content types accepted for complaint images — validated on the bytes, not the file name. */
+    private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
+
     private final ComplaintRepository complaintRepository;
     private final UserServiceClient userServiceClient;
     private final NotificationEventProducer notificationEventProducer;
+    private final ImageStorageService imageStorageService;
+    private final UploadProperties uploadProperties;
 
     @Transactional
     @Override
-    // createComplaint: Validates the user exists in User Service, then creates a new complaint with PENDING status
-    public ComplaintResponse createComplaint(Long authUserId, ComplaintRequest request) {
+    // createComplaint: Validates the user, uploads images to object storage, then persists the
+    // complaint with only the returned image URLs. No Base64 payloads ever reach the database.
+    public ComplaintResponse createComplaint(Long authUserId, ComplaintRequest request, MultipartFile[] images) {
 
         // Confirm the user profile exists in USER-SERVICE before creating the complaint
         UserProfileResponse profile = validateUserExists(authUserId);
         log.info("User lookup successful — authUserId: {} (name: {})", authUserId, profile.getName());
 
+        // 1. Validate every file up-front (content type, non-empty, size) — no uploads happen
+        //    if any single file is rejected.
+        List<MultipartFile> files = images != null ? List.of(images) : List.of();
+        for (int i = 0; i < files.size(); i++) {
+            validateImage(files.get(i), i);
+        }
+
+        // 2. Upload all files to object storage. If a later upload fails, already-uploaded
+        //    objects are deleted (best effort) so nothing is orphaned in Cloudinary.
+        List<String> uploadedUrls = new ArrayList<>();
+        try {
+            for (MultipartFile file : files) {
+                uploadedUrls.add(imageStorageService.upload(file));
+            }
+        } catch (RuntimeException ex) {
+            log.error("Image upload failed — rolling back {} already-uploaded image(s)", uploadedUrls.size(), ex);
+            deleteUploaded(uploadedUrls);
+            throw ex;
+        }
+
+        // 3. If this transaction later rolls back (DB save/commit failure), remove the
+        //    already-uploaded objects so nothing is orphaned in Cloudinary.
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        deleteUploaded(uploadedUrls);
+                    }
+                }
+            });
+        }
+
+        // 4. Persist the complaint with only the object-storage URLs.
         Complaint complaint = new Complaint();
         complaint.setTitle(request.getTitle());
         complaint.setDescription(request.getDescription());
@@ -51,19 +100,47 @@ public class ComplaintServiceImpl implements ComplaintService {
         // Attach initial history entry marking the creation
         complaint.addHistory(new ComplaintHistory(ComplaintStatus.PENDING, "Complaint submitted", authUserId));
 
-        // Attach images if provided
-        if (request.getImageUrls() != null) {
-            request.getImageUrls().forEach(url -> complaint.addImage(new ComplaintImage(url)));
-        }
+        // Attach images if provided — one ComplaintImage per object-storage URL
+        uploadedUrls.forEach(url -> complaint.addImage(new ComplaintImage(url)));
 
         Complaint savedComplaint = complaintRepository.save(complaint);
-        log.info("Complaint created with id: {} by authUserId: {}", savedComplaint.getId(), authUserId);
+        log.info("Complaint created with id: {} by authUserId: {} ({} image(s))", savedComplaint.getId(), authUserId, uploadedUrls.size());
 
         // Event-driven notification: publish to RabbitMQ so the Notification Service can store
         // a confirmation notification. Fire-and-forget — never blocks or fails the request.
         notificationEventProducer.publishComplaintCreated(savedComplaint);
 
         return ComplaintResponse.fromEntity(savedComplaint);
+    }
+
+    // validateImage: Rejects empty files, unsupported content types, and files over the
+    // configured maximum size. Content type is checked (not just the file extension).
+    private void validateImage(MultipartFile file, int index) {
+        String label = "Image " + (index + 1);
+        if (file == null || file.isEmpty()) {
+            throw new InvalidImageException(label + " is empty. Please choose a valid image file.");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
+            throw new InvalidImageException(label + " has an unsupported type. Only JPG, PNG and WEBP images are allowed.");
+        }
+        long maxBytes = uploadProperties.getMaxFileSize().toBytes();
+        if (file.getSize() > maxBytes) {
+            throw new InvalidImageException(
+                    label + " exceeds the maximum size of " + uploadProperties.getMaxFileSize().toMegabytes() + " MB.");
+        }
+    }
+
+    // deleteUploaded: Best-effort removal of images already pushed to object storage when a
+    // multi-image upload fails part-way — prevents orphaned objects.
+    private void deleteUploaded(List<String> uploadedUrls) {
+        for (String url : uploadedUrls) {
+            try {
+                imageStorageService.delete(url);
+            } catch (RuntimeException cleanupEx) {
+                log.warn("Failed to clean up uploaded image after error: {}", url, cleanupEx);
+            }
+        }
     }
 
     // validateUserExists: Confirms the auth user has a profile in USER-SERVICE via OpenFeign.
@@ -140,12 +217,22 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Transactional
     @Override
-    // deleteComplaint: Removes a complaint and all its associated images and history (cascade)
+    // deleteComplaint: Removes a complaint and all its associated images and history (cascade).
+    // Also removes the underlying objects from Cloudinary on a best-effort basis.
     public void deleteComplaint(Long complaintId) {
-        if (!complaintRepository.existsById(complaintId)) {
-            throw new ComplaintNotFoundException("Complaint not found with id: " + complaintId);
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
+
+        // Best-effort object removal — a Cloudinary failure must never block the DB delete.
+        for (ComplaintImage image : complaint.getImages()) {
+            try {
+                imageStorageService.delete(image.getImageUrl());
+            } catch (RuntimeException ex) {
+                log.warn("Failed to delete complaint image from storage: {}", image.getImageUrl(), ex);
+            }
         }
-        complaintRepository.deleteById(complaintId);
+
+        complaintRepository.delete(complaint);
         log.info("Complaint deleted with id: {}", complaintId);
     }
 }

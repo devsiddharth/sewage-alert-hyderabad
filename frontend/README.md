@@ -70,7 +70,9 @@ src/
 - **Field mapping:** the backend `ComplaintRequest` has no category/severity
   fields, so the report form embeds the selected *category* in the title and
   appends *severity* + *landmark* to the description. Photo uploads are
-  compressed to base64 data-URLs (the backend accepts `imageUrls` as base64).
+  compressed client-side and sent as **binary files** via `multipart/form-data`;
+  the backend uploads them to Cloudinary object storage and persists only the
+  returned URLs (no Base64 payloads in the database).
 - Notifications are served by the **Notification Service** through
   `GET /api/v1/notifications` (read/unread state is server-side). Settings
   (categories/departments) persist in `localStorage` until configuration

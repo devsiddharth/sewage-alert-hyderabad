@@ -54,8 +54,10 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  // FormData bodies must NOT set Content-Type — the browser adds the multipart boundary
+  // itself. JSON requests get the explicit header below.
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(init.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
     ...(init.headers as Record<string, string> | undefined),
   };
 
@@ -109,4 +111,8 @@ export const api = {
   patch: <T>(path: string, data?: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(data ?? {}) }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  // Multipart upload — used for complaint creation with image files. Appends nothing itself;
+  // pass a pre-built FormData (the caller owns the field names).
+  postForm: <T>(path: string, formData: FormData) =>
+    request<T>(path, { method: "POST", body: formData }),
 };
