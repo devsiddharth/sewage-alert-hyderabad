@@ -91,13 +91,13 @@ export function HotspotMapPage() {
   return (
     <div
       className={cn(
-        "hotspot-page min-h-screen space-y-4 p-4 sm:p-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:gap-4 lg:space-y-0",
+        "hotspot-page flex flex-1 flex-col gap-4 p-4 lg:min-h-0 lg:gap-5 lg:p-6",
         detailId !== null ? "lg:overflow-hidden" : "lg:overflow-y-auto",
         dark && "dark"
       )}
     >
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight hp-text sm:text-3xl">Hotspot map</h1>
           <p className="mt-1 text-sm hp-muted">
@@ -139,7 +139,7 @@ export function HotspotMapPage() {
 
       {/* Error banner */}
       {error && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-300/60 bg-red-50 px-4 py-3 dark:border-red-500/30 dark:bg-red-950/40">
+        <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-300/60 bg-red-50 px-4 py-3 dark:border-red-500/30 dark:bg-red-950/40">
           <p className="flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
             {error}
@@ -151,11 +151,13 @@ export function HotspotMapPage() {
       )}
 
       {/* Analytics strip */}
-      <HotspotStats analytics={analytics} loading={loading} areaName={areaName} />
+      <div className="shrink-0">
+        <HotspotStats analytics={analytics} loading={loading} areaName={areaName} />
+      </div>
 
       {/* Filters + map — flex-1 + min-h-0 lets the row (and the map inside it)
           stretch to fill every pixel of the remaining viewport height. */}
-      <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[320px_1fr]">
+      <div className="grid flex-1 gap-4 lg:min-h-0 lg:grid-rows-[1fr] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] lg:gap-5">
         <HotspotFilters
           filters={filters}
           activeCount={activeCount}
