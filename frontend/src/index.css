@@ -225,6 +225,15 @@
   filter: brightness(1.07) contrast(1.14) saturate(1.08);
 }
 
+/* Leaflet's container is focusable (tabindex="0") and Chrome paints the global
+ * :focus-visible ring around the ENTIRE map even after a plain mouse click
+ * (Leaflet itself only sets outline-offset: 1px, expecting a ring). Scoped to
+ * the hotspot page: no outline around the map, ever. The zoom buttons and
+ * attribution links inside the map still show a focus ring for keyboard users. */
+.hp-map-wrap .leaflet-container:focus {
+  outline: none;
+}
+
 .hp-map-wrap .leaflet-control-zoom a {
   background: var(--hp-control-bg);
   color: var(--hp-text);
@@ -369,4 +378,32 @@
 }
 .hp-popup-btn:active {
   transform: scale(0.98);
+}
+
+/* --- complaint point cursors ----------------------------------------------- */
+.hp-map-wrap .leaflet-overlay-pane path,
+.hp-map-wrap .hp-cluster-wrap {
+  cursor: pointer;
+}
+
+/* --- cluster hover tooltip -------------------------------------------------- */
+.hp-map-wrap .leaflet-tooltip.hp-tooltip {
+  background: var(--hp-glass-strong);
+  border: 1px solid var(--hp-border);
+  border-radius: 0.625rem;
+  color: var(--hp-text);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.375rem 0.625rem;
+  box-shadow: var(--hp-shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+/* Leaflet 1.9 draws the tooltip arrow with a single ::before hardcoded to
+ * white — match it to the glass background so it blends with the dark map. */
+.hp-map-wrap .leaflet-tooltip-top.hp-tooltip::before {
+  border-top-color: var(--hp-glass-strong);
+}
+.hp-map-wrap .leaflet-tooltip-bottom.hp-tooltip::before {
+  border-bottom-color: var(--hp-glass-strong);
 }

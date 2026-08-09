@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type DragEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
@@ -17,7 +17,7 @@ import { Field, Input, Textarea } from "@/components/ui/Field";
 import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/lib/toast";
-import { fileToCompressedDataUrl, complaintCode } from "@/lib/utils";
+import { fileToCompressedFile, complaintCode } from "@/lib/utils";
 import { ISSUE_CATEGORIES, SEVERITY_LEVELS, type Complaint } from "@/types";
 import { cn } from "@/lib/cn";
 
@@ -28,6 +28,10 @@ interface GeoState {
   locating: boolean;
 }
 
+// Mirrors the backend whitelist (JPG/PNG/WEBP) so a file the UI accepts can never be
+// rejected by the server with a confusing error after submission.
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 export function ReportIssue() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -37,11 +41,19 @@ export function ReportIssue() {
   const [description, setDescription] = useState("");
   const [landmark, setLandmark] = useState("");
   const [severity, setSeverity] = useState<string>("MEDIUM");
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<File[]>([]);
   const [geo, setGeo] = useState<GeoState>({ lat: "", lng: "", source: "none", locating: false });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<Complaint | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Object-URL previews for the selected files (no base64 in state). Revoked whenever the
+  // selection changes or the form unmounts to avoid leaking blob URLs.
+  const previewUrls = useMemo(() => images.map((f) => URL.createObjectURL(f)), [images]);
+  useEffect(() => {
+    const urls = previewUrls;
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+  }, [previewUrls]);
 
   const detectGps = useCallback(() => {
     if (!navigator.geolocation) {
@@ -71,7 +83,7 @@ export function ReportIssue() {
   const addFiles = useCallback(
     async (files: FileList | null) => {
       if (!files) return;
-      const incoming = Array.from(files).filter((f) => f.type.startsWith("image/"));
+      const incoming = Array.from(files).filter((f) => ALLOWED_IMAGE_TYPES.includes(f.type));
       if (incoming.length === 0) {
         toast("error", "Unsupported file", "Please choose an image (JPG, PNG, WEBP).");
         return;
@@ -82,7 +94,7 @@ export function ReportIssue() {
         return;
       }
       try {
-        const processed = await Promise.all(incoming.map((f) => fileToCompressedDataUrl(f)));
+        const processed = await Promise.all(incoming.map((f) => fileToCompressedFile(f)));
         setImages((prev) => [...prev, ...processed]);
       } catch {
         toast("error", "Couldn't read image", "Please try a different photo.");
@@ -112,13 +124,15 @@ export function ReportIssue() {
     ].filter(Boolean);
 
     try {
-      const complaint = await api.post<Complaint>("/api/v1/complaints", {
-        title: finalTitle,
-        description: parts.join("\n"),
-        latitude: lat,
-        longitude: lng,
-        imageUrls: images,
-      } as Complaint);
+      // Multipart upload — image files go as binary parts; the backend uploads them to
+      // object storage and persists only the returned URLs.
+      const formData = new FormData();
+      formData.append("title", finalTitle);
+      formData.append("description", parts.join("\n"));
+      formData.append("latitude", String(lat));
+      formData.append("longitude", String(lng));
+      images.forEach((file) => formData.append("images", file));
+      const complaint = await api.postForm<Complaint>("/api/v1/complaints", formData);
       setSubmitted(complaint);
       toast("success", "Complaint submitted", `Your tracking ID is ${complaintCode(complaint.id)}.`);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -226,8 +240,8 @@ export function ReportIssue() {
             className="mt-4 grid gap-3 sm:grid-cols-2"
           >
             {images.map((img, i) => (
-              <div key={img.slice(0, 40) + i} className="group relative overflow-hidden rounded-xl border border-line">
-                <img src={img} alt={`Photo ${i + 1}`} className="h-40 w-full object-cover" />
+              <div key={`${img.name}-${img.size}-${i}`} className="group relative overflow-hidden rounded-xl border border-line">
+                <img src={previewUrls[i]} alt={`Photo ${i + 1}`} className="h-40 w-full object-cover" />
                 <button
                   type="button"
                   onClick={() => setImages((prev) => prev.filter((_, j) => j !== i))}
@@ -251,7 +265,7 @@ export function ReportIssue() {
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               multiple
               className="hidden"
               onChange={(e) => {

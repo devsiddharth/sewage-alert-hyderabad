@@ -5,11 +5,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
-// ComplaintRequest: DTO for creating a new complaint — validated at the controller level using @Valid
+// ComplaintRequest: DTO for creating a new complaint — bound from multipart form fields
+// (title, description, latitude, longitude) and validated at the controller level using @Valid.
+// Images are NOT part of this DTO: they arrive as MultipartFile parts and are uploaded to
+// object storage (Cloudinary); only the returned URLs are persisted.
 public class ComplaintRequest {
 
     @NotBlank(message = "Title is required")
@@ -23,8 +24,5 @@ public class ComplaintRequest {
 
     @NotNull(message = "Longitude is required")
     private Double longitude;
-
-    // imageUrls: Optional list of image URLs or base64-encoded images attached to the complaint
-    private List<String> imageUrls;
 
 }

@@ -3,14 +3,16 @@ package com.sewagealert.complaint.service;
 import com.sewagealert.complaint.dto.ComplaintRequest;
 import com.sewagealert.complaint.dto.ComplaintResponse;
 import com.sewagealert.complaint.dto.ComplaintStatusRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 // ComplaintService: Core business logic for complaint lifecycle — creation, status updates, retrieval, and deletion
 public interface ComplaintService {
 
-    // createComplaint: Creates a new complaint with PENDING status and optionally attaches images
-    ComplaintResponse createComplaint(Long authUserId, ComplaintRequest request);
+    // createComplaint: Creates a new complaint with PENDING status. Images are uploaded to
+    // object storage first and only the returned URLs are attached to the complaint.
+    ComplaintResponse createComplaint(Long authUserId, ComplaintRequest request, MultipartFile[] images);
 
     // getComplaint: Retrieves a single complaint by its ID
     ComplaintResponse getComplaint(Long complaintId);
