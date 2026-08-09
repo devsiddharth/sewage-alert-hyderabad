@@ -7,8 +7,10 @@ import com.sewagealert.complaint.dto.ComplaintStatusRequest;
 import com.sewagealert.complaint.service.ComplaintService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -23,12 +25,15 @@ public class ComplaintController {
         this.complaintService = complaintService;
     }
 
-    @PostMapping
-    // POST /api/v1/complaints: Creates a new complaint — requires authenticated user ID from header
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    // POST /api/v1/complaints: Creates a new complaint — multipart/form-data. Form fields
+    // (title, description, latitude, longitude) bind to ComplaintRequest; optional "images"
+    // file parts are uploaded to object storage and only URLs are persisted.
     public ResponseEntity<ApiResponse<ComplaintResponse>> createComplaint(
             @RequestHeader("X-Auth-User-Id") Long userId,
-            @Valid @RequestBody ComplaintRequest request) {
-        ComplaintResponse response = complaintService.createComplaint(userId, request);
+            @Valid @ModelAttribute ComplaintRequest request,
+            @RequestPart(value = "images", required = false) MultipartFile[] images) {
+        ComplaintResponse response = complaintService.createComplaint(userId, request, images);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Complaint created successfully", response));

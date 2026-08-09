@@ -24,7 +24,10 @@ import type { Complaint } from "@/types";
 // Layers (bottom → top): tiles → animated heat → clustered complaint markers.
 // Both the light and dark tile sets stay mounted and cross-fade via opacity on
 // theme switch, so toggling the theme never flashes a blank map. Panning is
-// clamped to the wider Hyderabad metro via maxBounds + viscosity.
+// clamped to the Hyderabad metro via maxBounds + viscosity, so users can never
+// wander across India. (The municipal boundary overlay is intentionally not
+// rendered for now — re-enable HyderabadBoundaryLayer if the outline is wanted
+// again.)
 // ---------------------------------------------------------------------------
 
 // Keeps Leaflet's internal size in sync with the wrapper. The map's height is
@@ -63,7 +66,7 @@ export function HotspotMap({
   // the viewport. Mobile keeps a responsive viewport-based height; min-h
   // guards against the map collapsing on very short screens.
   return (
-    <div className="hp-map-wrap relative h-[50vh] min-h-[320px] overflow-hidden rounded-2xl lg:h-full">
+    <div className="hp-map-wrap relative h-[55vh] min-h-[320px] overflow-hidden rounded-2xl lg:h-full">
       <MapContainer
         center={HYDERABAD_CENTER}
         zoom={DEFAULT_ZOOM}

@@ -67,30 +67,45 @@ export function complaintCode(id: number): string {
   return `#SA-${String(id).padStart(4, "0")}`;
 }
 
-/** Compress an image file to a base64 data URL (max dimension px, quality 0..1). */
-export function fileToCompressedDataUrl(
+/**
+ * Compress an image file to a resized JPEG File (max dimension px, quality 0..1).
+ *
+ * The result is a real binary File (never a base64 string) so it can be attached to
+ * a FormData request and uploaded to the backend's object storage. Keeps the original
+ * compression behaviour that used to produce base64 data-URLs, but loads the source
+ * image via an object URL instead of FileReader/base64.
+ */
+export function fileToCompressedFile(
   file: File,
   maxDimension = 1280,
   quality = 0.72
-): Promise<string> {
+): Promise<File> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Could not read file"));
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error("Unsupported image"));
-      img.onload = () => {
-        const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return reject(new Error("Canvas not supported"));
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
-      };
-      img.src = String(reader.result);
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Unsupported image"));
     };
-    reader.readAsDataURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("Canvas not supported"));
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) return reject(new Error("Could not compress image"));
+          const name = file.name.replace(/\.[^.]+$/, "") || "photo";
+          resolve(new File([blob], `${name}.jpg`, { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        quality
+      );
+    };
+    img.src = objectUrl;
   });
 }

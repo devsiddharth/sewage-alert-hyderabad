@@ -41,6 +41,49 @@
 | PATCH | `/api/v1/complaints/{id}/status` | Update complaint status |
 | DELETE | `/api/v1/complaints/{id}` | Delete complaint |
 
+### Create Complaint (multipart/form-data)
+
+`POST /api/v1/complaints` consumes `multipart/form-data` (not JSON). Headers: `Authorization: Bearer <jwt>` and `X-Auth-User-Id: <id>`.
+
+| Form field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `title` | string | ✅ | Complaint title |
+| `description` | string | ✅ | Complaint details |
+| `latitude` | number | ✅ | GPS latitude |
+| `longitude` | number | ✅ | GPS longitude |
+| `images` | file(s) | ❌ | Image files — repeat the field for multiple images (max 4). JPG/PNG/WEBP only. |
+
+Images are uploaded to Cloudinary object storage; only the returned URLs are persisted in MySQL.
+The response `data.imageUrls` contains those public URLs (e.g. `https://res.cloudinary.com/.../complaints/photo.jpg`).
+
+```
+POST /api/v1/complaints
+Content-Type: multipart/form-data; boundary=----x
+
+------x
+Content-Disposition: form-data; name="title"
+
+Sewage overflow near road
+------x
+Content-Disposition: form-data; name="description"
+
+Blocking the drain for 2 days
+------x
+Content-Disposition: form-data; name="latitude"
+
+17.3850
+------x
+Content-Disposition: form-data; name="longitude"
+
+78.4867
+------x
+Content-Disposition: form-data; name="images"; filename="photo.jpg"
+Content-Type: image/jpeg
+
+<binary>
+------x--
+```
+
 ---
 
 # 5️⃣ Community APIs

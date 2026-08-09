@@ -24,6 +24,12 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
 
+  # Multipart upload limits for complaint images (per-file ceiling and total request ceiling).
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 40MB
+
   # RabbitMQ: Broker used to publish domain events (notification.created, notification.resolved, ...)
   # consumed by the Notification Service. Publishing is fire-and-forget — a broker outage never
   # blocks complaint creation/status updates (failures are logged by the producer).
@@ -37,6 +43,18 @@ spring:
 app:
   rabbitmq:
     exchange: notification.exchange
+  # Per-image validation ceiling (mirrors spring.servlet.multipart.max-file-size).
+  # Bound by UploadProperties.
+  upload:
+    max-file-size: 10MB
+
+# Cloudinary object storage — complaint images are uploaded here and only the returned
+# URLs are stored in MySQL. Credentials are read from the environment; never commit real
+# values. Without credentials the app still starts, but image uploads fail at runtime.
+cloudinary:
+  cloud-name: ${CLOUDINARY_CLOUD_NAME:}
+  api-key: ${CLOUDINARY_API_KEY:}
+  api-secret: ${CLOUDINARY_API_SECRET:}
 
 # Eureka Client Configuration
 eureka:

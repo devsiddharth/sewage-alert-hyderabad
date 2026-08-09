@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { CircleMarker, Popup } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import * as L from "leaflet";
@@ -9,10 +9,15 @@ import type { Complaint, ComplaintStatus } from "@/types";
 // ---------------------------------------------------------------------------
 // ComplaintMarkers — clustered individual complaint locations.
 //
-// Thousands of complaints are handled by MarkerClusterGroup (chunked loading,
-// spiderfy on click). Clustering is disabled above zoom 14 so administrators
-// can pick out individual complaints; each marker opens a glass popup with the
-// full details from the already-loaded Complaint object (no extra API calls).
+// Interaction model:
+//   - Clusters: hovering shows a count tooltip; clicking zooms to the group
+//     (default MarkerClusterGroup behaviour), dissolving into individual
+//     markers at zoom ≥ 15.
+//   - Individual markers: hovering opens the glass popup preview (it closes
+//     again when the cursor leaves); clicking pins the popup open so its
+//     "Open complaint" button is reachable — that opens the full detail modal.
+//     Everything comes from the already-loaded Complaint objects, no extra
+//     API calls.
 // ---------------------------------------------------------------------------
 
 const STATUS_COLOR: Record<ComplaintStatus, string> = {
@@ -62,6 +67,56 @@ function ComplaintPopup({ complaint, onOpen }: { complaint: Complaint; onOpen: (
   );
 }
 
+/**
+ * A single complaint point.
+ *
+ * Hovering previews the popup (and enlarges the point slightly); a click
+ * "pins" the popup so it stays open after the cursor leaves, letting the user
+ * reach the "Open complaint" action. The popup unpins when dismissed via the
+ * close button or by clicking elsewhere on the map (Leaflet auto-close).
+ */
+function ComplaintMarker({
+  complaint,
+  onOpenComplaint,
+}: {
+  complaint: Complaint;
+  onOpenComplaint: (id: number) => void;
+}) {
+  const markerRef = useRef<L.CircleMarker | null>(null);
+  const [pinned, setPinned] = useState(false);
+
+  return (
+    <CircleMarker
+      ref={markerRef}
+      center={[complaint.latitude, complaint.longitude]}
+      radius={6}
+      pathOptions={{
+        color: "#ffffff",
+        weight: 1.5,
+        fillColor: STATUS_COLOR[complaint.status],
+        fillOpacity: 0.95,
+      }}
+      eventHandlers={{
+        mouseover: () => {
+          markerRef.current?.setRadius(8);
+          if (!pinned) markerRef.current?.openPopup();
+        },
+        mouseout: () => {
+          markerRef.current?.setRadius(6);
+          if (!pinned) markerRef.current?.closePopup();
+        },
+        click: () => {
+          setPinned(true);
+          markerRef.current?.openPopup();
+        },
+        popupclose: () => setPinned(false),
+      }}
+    >
+      <ComplaintPopup complaint={complaint} onOpen={onOpenComplaint} />
+    </CircleMarker>
+  );
+}
+
 export const ComplaintMarkers = memo(function ComplaintMarkers({
   complaints,
   onOpenComplaint,
@@ -69,6 +124,22 @@ export const ComplaintMarkers = memo(function ComplaintMarkers({
   complaints: Complaint[];
   onOpenComplaint: (id: number) => void;
 }) {
+  const handleClusterMouseOver = useCallback((e: L.LeafletMouseEvent) => {
+    const cluster = e.layer as L.MarkerCluster;
+    const count = cluster.getChildCount();
+    cluster
+      .bindTooltip(`${count} complaint${count === 1 ? "" : "s"} here — click to zoom in`, {
+        direction: "top",
+        offset: L.point(0, -28),
+        className: "hp-tooltip",
+      })
+      .openTooltip();
+  }, []);
+
+  const handleClusterMouseOut = useCallback((e: L.LeafletMouseEvent) => {
+    (e.layer as L.MarkerCluster).unbindTooltip();
+  }, []);
+
   if (complaints.length === 0) return null;
 
   return (
@@ -84,21 +155,11 @@ export const ComplaintMarkers = memo(function ComplaintMarkers({
       showCoverageOnHover={false}
       spiderfyOnMaxZoom={true}
       iconCreateFunction={clusterIcon}
+      onMouseOver={handleClusterMouseOver}
+      onMouseOut={handleClusterMouseOut}
     >
       {complaints.map((c) => (
-        <CircleMarker
-          key={c.id}
-          center={[c.latitude, c.longitude]}
-          radius={5}
-          pathOptions={{
-            color: "#ffffff",
-            weight: 1.5,
-            fillColor: STATUS_COLOR[c.status],
-            fillOpacity: 0.95,
-          }}
-        >
-          <ComplaintPopup complaint={c} onOpen={onOpenComplaint} />
-        </CircleMarker>
+        <ComplaintMarker key={c.id} complaint={c} onOpenComplaint={onOpenComplaint} />
       ))}
     </MarkerClusterGroup>
   );
