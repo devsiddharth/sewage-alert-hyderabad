@@ -1,12 +1,17 @@
 package com.sewagealert.complaint.service.impl;
 
+import com.sewagealert.complaint.client.AuthServiceClient;
 import com.sewagealert.complaint.client.UserServiceClient;
 import com.sewagealert.complaint.config.UploadProperties;
 import com.sewagealert.complaint.dto.ComplaintRequest;
 import com.sewagealert.complaint.dto.ComplaintResponse;
 import com.sewagealert.complaint.dto.ComplaintStatusRequest;
 import com.sewagealert.complaint.dto.UserProfileResponse;
+import com.sewagealert.complaint.dto.UserRoleResponse;
 import com.sewagealert.complaint.exception.ComplaintNotFoundException;
+import com.sewagealert.complaint.exception.FieldOfficerNotFoundException;
+import com.sewagealert.complaint.exception.ForbiddenException;
+import com.sewagealert.complaint.exception.InvalidAssignmentException;
 import com.sewagealert.complaint.exception.InvalidImageException;
 import com.sewagealert.complaint.exception.UserProfileNotFoundException;
 import com.sewagealert.complaint.exception.UserServiceUnavailableException;
@@ -41,6 +46,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     private final ComplaintRepository complaintRepository;
     private final UserServiceClient userServiceClient;
+    private final AuthServiceClient authServiceClient;
     private final NotificationEventProducer notificationEventProducer;
     private final ImageStorageService imageStorageService;
     private final UploadProperties uploadProperties;
@@ -191,7 +197,81 @@ public class ComplaintServiceImpl implements ComplaintService {
     public ComplaintResponse updateStatus(Long complaintId, Long updatedBy, ComplaintStatusRequest request) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
+        return applyStatusChange(complaint, updatedBy, request);
+    }
 
+    @Transactional
+    @Override
+    // assignComplaint: Admin-only assignment workflow. Authorization is enforced server-side:
+    // the caller must be ADMIN and the target user must exist with the FIELD_OFFICER role.
+    // Terminal complaints (RESOLVED/REJECTED) are immutable and cannot be (re)assigned.
+    public ComplaintResponse assignComplaint(Long complaintId, Long fieldOfficerId, Long assignedBy) {
+        // 1. The caller must be an administrator
+        verifyRole(assignedBy, "ADMIN", "Only administrators can assign complaints");
+
+        // 2. The complaint must exist
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
+
+        // 3. Terminal states are immutable
+        if (complaint.getStatus() == ComplaintStatus.RESOLVED || complaint.getStatus() == ComplaintStatus.REJECTED) {
+            throw new InvalidAssignmentException(
+                    "Complaint is already " + complaint.getStatus() + " and can no longer be assigned");
+        }
+
+        // 4. The officer must exist and actually hold the FIELD_OFFICER role
+        UserRoleResponse officer = fetchUserRole(fieldOfficerId);
+        if (officer == null) {
+            throw new FieldOfficerNotFoundException("Field officer not found");
+        }
+        if (!"FIELD_OFFICER".equals(officer.getRole())) {
+            throw new InvalidAssignmentException("Selected user is not a field officer");
+        }
+
+        // 5. Persist the assignment (reassignment simply overwrites assignedTo atomically)
+        complaint.setAssignedTo(fieldOfficerId);
+        complaint.addHistory(new ComplaintHistory(complaint.getStatus(),
+                "Complaint assigned to " + officer.getName(), assignedBy));
+        complaint = complaintRepository.save(complaint);
+        log.info("Complaint {} assigned to field officer {} by admin: {}", complaintId, fieldOfficerId, assignedBy);
+
+        // 6. Notify the field officer via the existing RabbitMQ event flow
+        notificationEventProducer.publishComplaintAssigned(complaint, fieldOfficerId, assignedBy);
+
+        return ComplaintResponse.fromEntity(complaint);
+    }
+
+    @Override
+    // getAssignedComplaints: Field officers see ONLY complaints assigned to them. The officer
+    // id comes from the authenticated caller (gateway header), never from the client.
+    public List<ComplaintResponse> getAssignedComplaints(Long officerUserId) {
+        verifyRole(officerUserId, "FIELD_OFFICER", "Only field officers can access their assigned complaints");
+        return complaintRepository.findByAssignedTo(officerUserId).stream()
+                .map(ComplaintResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    @Override
+    // updateAssignedComplaintStatus: Field officers update the status only of complaints
+    // assigned to them — ownership is enforced here, never trusted from the frontend.
+    public ComplaintResponse updateAssignedComplaintStatus(Long complaintId, Long officerUserId,
+                                                           ComplaintStatusRequest request) {
+        verifyRole(officerUserId, "FIELD_OFFICER", "Only field officers can update their assigned complaints");
+
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
+
+        // Unassigned complaints and complaints assigned to another officer are off-limits
+        if (!officerUserId.equals(complaint.getAssignedTo())) {
+            throw new ForbiddenException("You can only update complaints assigned to you");
+        }
+
+        return applyStatusChange(complaint, officerUserId, request);
+    }
+
+    // applyStatusChange: Shared status mutation used by both the admin and field-officer paths.
+    private ComplaintResponse applyStatusChange(Complaint complaint, Long updatedBy, ComplaintStatusRequest request) {
         ComplaintStatus previousStatus = complaint.getStatus();
         complaint.setStatus(request.getStatus());
         if (request.getPriority() != null) {
@@ -207,12 +287,36 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.addHistory(new ComplaintHistory(request.getStatus(), request.getRemarks(), updatedBy));
 
         complaint = complaintRepository.save(complaint);
-        log.info("Complaint {} status updated to {} by user: {}", complaintId, request.getStatus(), updatedBy);
+        log.info("Complaint {} status updated to {} by user: {}", complaint.getId(), request.getStatus(), updatedBy);
 
         // Event-driven notification: publish the status-change event to RabbitMQ (fire-and-forget)
         notificationEventProducer.publishStatusChanged(complaint, previousStatus);
 
         return ComplaintResponse.fromEntity(complaint);
+    }
+
+    // fetchUserRole: Calls AUTH-SERVICE for identity + role. Returns null when the user does
+    // not exist; surfaces broker/network failures as a 503 so callers can decide the semantics.
+    private UserRoleResponse fetchUserRole(Long userId) {
+        try {
+            UserRoleResponse user = authServiceClient.getUserRole(userId).getData();
+            return user != null ? user : null;
+        } catch (FeignException.NotFound ex) {
+            return null;
+        } catch (FeignException ex) {
+            log.error("Role lookup failed — AUTH-SERVICE call errored for userId: {}", userId, ex);
+            throw new UserServiceUnavailableException("Auth Service is currently unavailable. Please try again later.");
+        }
+    }
+
+    // verifyRole: Server-side role enforcement — throws 403 unless the caller exists with the
+    // expected role. This is the security boundary for admin/officer endpoints.
+    private UserRoleResponse verifyRole(Long userId, String expectedRole, String forbiddenMessage) {
+        UserRoleResponse user = fetchUserRole(userId);
+        if (user == null || !expectedRole.equals(user.getRole())) {
+            throw new ForbiddenException(forbiddenMessage);
+        }
+        return user;
     }
 
     @Transactional

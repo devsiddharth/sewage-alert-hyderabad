@@ -47,6 +47,27 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), null));
     }
 
+    @ExceptionHandler(FieldOfficerNotFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleFieldOfficerNotFound(FieldOfficerNotFoundException ex) {
+        return ResponseEntity
+                .status(NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiResponse<String>> handleForbidden(ForbiddenException ex) {
+        return ResponseEntity
+                .status(FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(InvalidAssignmentException.class)
+    public ResponseEntity<ApiResponse<String>> handleInvalidAssignment(InvalidAssignmentException ex) {
+        return ResponseEntity
+                .status(BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), null));
+    }
+
     @ExceptionHandler(UserServiceUnavailableException.class)
     public ResponseEntity<ApiResponse<String>> handleUserServiceUnavailable(UserServiceUnavailableException ex) {
         return ResponseEntity

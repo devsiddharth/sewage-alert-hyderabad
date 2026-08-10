@@ -1,5 +1,6 @@
 package com.sewagealert.complaint.service.impl;
 
+import com.sewagealert.complaint.client.AuthServiceClient;
 import com.sewagealert.complaint.client.UserServiceClient;
 import com.sewagealert.complaint.config.UploadProperties;
 import com.sewagealert.complaint.dto.ApiResponse;
@@ -48,6 +49,7 @@ class ComplaintServiceImplTest {
 
     @Mock private ComplaintRepository complaintRepository;
     @Mock private UserServiceClient userServiceClient;
+    @Mock private AuthServiceClient authServiceClient;
     @Mock private NotificationEventProducer notificationEventProducer;
     @Mock private ImageStorageService imageStorageService;
 
@@ -57,7 +59,7 @@ class ComplaintServiceImplTest {
     @BeforeEach
     void setUp() {
         uploadProperties = new UploadProperties();
-        service = new ComplaintServiceImpl(complaintRepository, userServiceClient,
+        service = new ComplaintServiceImpl(complaintRepository, userServiceClient, authServiceClient,
                 notificationEventProducer, imageStorageService, uploadProperties);
         when(userServiceClient.getUserProfile(USER_ID))
                 .thenReturn(ApiResponse.success("ok", new UserProfileResponse()));

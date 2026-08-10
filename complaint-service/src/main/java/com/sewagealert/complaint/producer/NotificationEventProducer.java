@@ -14,4 +14,9 @@ public interface NotificationEventProducer {
     // publishStatusChanged: Called after a status update. Derives the correct event type
     // (ASSIGNED / STATUS_UPDATED / RESOLVED / REJECTED / REOPENED) from the previous vs new status.
     void publishStatusChanged(Complaint complaint, ComplaintStatus previousStatus);
+
+    // publishComplaintAssigned: Called after an admin assigns a complaint to a field officer.
+    // The notification is addressed to the officer (userId = fieldOfficerId) — routing key
+    // notification.assigned, event type COMPLAINT_ASSIGNED.
+    void publishComplaintAssigned(Complaint complaint, Long fieldOfficerId, Long assignedBy);
 }

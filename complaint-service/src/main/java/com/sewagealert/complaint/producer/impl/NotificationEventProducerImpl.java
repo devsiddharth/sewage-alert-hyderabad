@@ -117,6 +117,34 @@ public class NotificationEventProducerImpl implements NotificationEventProducer 
         publish(event, routingKey);
     }
 
+    @Override
+    // publishComplaintAssigned: Notifies the field officer that a complaint has been assigned
+    // to them. The recipient (userId) is the officer — never the citizen who filed the complaint.
+    public void publishComplaintAssigned(Complaint complaint, Long fieldOfficerId, Long assignedBy) {
+        Map<String, Object> metadata = metadataOf(complaint, null);
+        metadata.put("assignedTo", fieldOfficerId);
+        metadata.put("assignedBy", assignedBy);
+
+        NotificationEvent event = NotificationEvent.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("COMPLAINT_ASSIGNED")
+                .userId(fieldOfficerId)
+                .complaintId(complaint.getId())
+                .referenceType("COMPLAINT")
+                .referenceId(complaint.getId())
+                .title("New Complaint Assigned")
+                .message("You have been assigned complaint #" + complaint.getId()
+                        + " — \"" + complaint.getTitle()
+                        + "\". Please review the details and update its status.")
+                .status(complaint.getStatus().name())
+                .priority(complaint.getPriority() != null ? complaint.getPriority().name() : null)
+                .createdAt(LocalDateTime.now())
+                .metadata(metadata)
+                .build();
+
+        publish(event, RK_ASSIGNED);
+    }
+
     // wasClosed: True when the complaint was previously in a terminal state
     private boolean wasClosed(ComplaintStatus status) {
         return status == ComplaintStatus.RESOLVED || status == ComplaintStatus.REJECTED;
