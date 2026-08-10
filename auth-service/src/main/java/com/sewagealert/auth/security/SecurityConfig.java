@@ -29,6 +29,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                // Internal service-to-service endpoints (role verification for other
+                // microservices) — no user JWT is involved in those calls. These follow
+                // the /api/v1/internal/ convention which the gateway does NOT route,
+                // so they are only reachable via service-to-service Feign calls.
+                .requestMatchers("/api/v1/internal/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest().authenticated()
             )

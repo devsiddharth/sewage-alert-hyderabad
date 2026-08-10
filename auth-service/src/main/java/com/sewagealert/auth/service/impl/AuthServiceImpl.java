@@ -3,8 +3,10 @@ package com.sewagealert.auth.service.impl;
 import com.sewagealert.auth.client.UserServiceClient;
 import com.sewagealert.auth.dto.AuthResponse;
 import com.sewagealert.auth.dto.CreateUserProfileRequest;
+import com.sewagealert.auth.dto.FieldOfficerResponse;
 import com.sewagealert.auth.dto.LoginRequest;
 import com.sewagealert.auth.dto.RegisterRequest;
+import com.sewagealert.auth.dto.UserRoleResponse;
 import com.sewagealert.auth.exception.EmailAlreadyExistsException;
 import com.sewagealert.auth.exception.InvalidCredentialsException;
 import com.sewagealert.auth.exception.UserNotFoundException;
@@ -17,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -131,5 +136,22 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .build();
+    }
+
+    @Override
+    // getFieldOfficers: All FIELD_OFFICER users, projected to a safe DTO (id/name/email only)
+    public List<FieldOfficerResponse> getFieldOfficers() {
+        return userRepository.findByRole(Role.FIELD_OFFICER).stream()
+                .map(FieldOfficerResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    // getUserRoleInfo: Identity + role lookup used by other services for server-side
+    // authorization — the user must exist, otherwise the caller gets a 404.
+    public UserRoleResponse getUserRoleInfo(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+        return UserRoleResponse.fromEntity(user);
     }
 }

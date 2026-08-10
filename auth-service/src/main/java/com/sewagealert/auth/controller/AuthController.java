@@ -2,16 +2,19 @@ package com.sewagealert.auth.controller;
 
 import com.sewagealert.auth.dto.ApiResponse;
 import com.sewagealert.auth.dto.AuthResponse;
+import com.sewagealert.auth.dto.FieldOfficerResponse;
 import com.sewagealert.auth.dto.LoginRequest;
 import com.sewagealert.auth.dto.RegisterRequest;
+import com.sewagealert.auth.exception.ForbiddenException;
 import com.sewagealert.auth.service.AuthService;
-import com.sewagealert.auth.service.impl.AuthServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -42,4 +45,23 @@ public class AuthController {
         return ResponseEntity
                 .ok(ApiResponse.success("Profile retrieved successfully", authResponse));
     }
-}
+
+    @GetMapping("/admin/field-officers")
+    // GET /api/v1/auth/admin/field-officers: Lists assignable field officers (id/name/email only).
+    // Authorization is enforced server-side — the JWT must carry the ROLE_ADMIN authority.
+    public ResponseEntity<ApiResponse<List<FieldOfficerResponse>>> getFieldOfficers(Authentication authentication) {
+        requireAdmin(authentication);
+        List<FieldOfficerResponse> officers = authService.getFieldOfficers();
+        return ResponseEntity
+                .ok(ApiResponse.success("Field officers retrieved successfully", officers));
+    }
+
+    // requireAdmin: Rejects the call unless the authenticated principal has the ADMIN role.
+    private void requireAdmin(Authentication authentication) {
+        if (authentication == null
+                || authentication.getAuthorities().stream()
+                        .noneMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()))) {
+            throw new ForbiddenException("Only administrators can perform this action");
+        }
+    }
+}

@@ -40,6 +40,17 @@ app:
     name: Administrator
     email: admin@sewagealert.com
     password: Admin@123
+  field-officers:
+    accounts:
+      - name: Ravi Kumar
+        email: ravi.officer@sewagealert.com
+        password: Officer@123
+      - name: Suresh Reddy
+        email: suresh.officer@sewagealert.com
+        password: Officer@123
+      - name: Anil Sharma
+        email: anil.officer@sewagealert.com
+        password: Officer@123
 
 logging:
   level:
