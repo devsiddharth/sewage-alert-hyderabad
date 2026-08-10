@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { homePathFor } from "@/lib/utils";
 
 export function Login() {
   const { login } = useAuth();
@@ -29,8 +30,7 @@ export function Login() {
     setLoading(true);
     try {
       const auth = await login(email.trim(), password);
-      const isAdmin = auth.role === "ADMIN" || auth.role === "AUTHORITY";
-      navigate(from ?? (isAdmin ? "/admin" : "/dashboard"), { replace: true });
+      navigate(from ?? homePathFor(auth.role), { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unable to sign in. Please try again.");
     } finally {

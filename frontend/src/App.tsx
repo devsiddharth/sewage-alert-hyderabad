@@ -2,7 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "@/lib/auth";
 import { ToastProvider } from "@/lib/toast";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { RequireAdmin, RequireAuth, RedirectIfAuthed } from "@/components/layout/RouteGuards";
+import { RequireAdmin, RequireAuth, RequireFieldOfficer, RedirectIfAuthed } from "@/components/layout/RouteGuards";
 
 import { Home } from "@/pages/public/Home";
 import { Login } from "@/pages/public/Login";
@@ -31,6 +31,10 @@ import { NgosPage } from "@/pages/admin/community/Ngos";
 import { PlantsPage } from "@/pages/admin/community/Plants";
 import { PipelinesPage } from "@/pages/admin/community/Pipelines";
 import { LakesPage } from "@/pages/admin/community/Lakes";
+
+import { FieldOfficerLayout } from "@/pages/officer/FieldOfficerLayout";
+import { AssignedComplaints } from "@/pages/officer/AssignedComplaints";
+import { FieldOfficerComplaintDetail } from "@/pages/officer/ComplaintDetailPage";
 
 export default function App() {
   return (
@@ -82,6 +86,22 @@ export default function App() {
               <Route path="report" element={<ReportIssue />} />
               <Route path="complaints" element={<MyComplaints />} />
               <Route path="complaints/:id" element={<ComplaintDetailPage />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+
+            {/* Field officer dashboard */}
+            <Route
+              path="/officer"
+              element={
+                <RequireFieldOfficer>
+                  <FieldOfficerLayout />
+                </RequireFieldOfficer>
+              }
+            >
+              <Route index element={<AssignedComplaints />} />
+              <Route path="complaints" element={<AssignedComplaints />} />
+              <Route path="complaints/:id" element={<FieldOfficerComplaintDetail />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
             </Route>

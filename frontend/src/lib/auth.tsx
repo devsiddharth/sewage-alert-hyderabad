@@ -14,6 +14,7 @@ interface AuthContextValue {
   user: AuthResponse | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isFieldOfficer: boolean;
   login: (email: string, password: string) => Promise<AuthResponse>;
   register: (data: RegisterRequest) => Promise<AuthResponse>;
   logout: () => void;
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: Boolean(user?.token),
       isAdmin: user?.role === "ADMIN" || user?.role === "AUTHORITY",
+      isFieldOfficer: user?.role === "FIELD_OFFICER",
       login,
       register,
       logout,

@@ -49,7 +49,7 @@ export interface AppNotification {
   updatedAt: string;
 }
 
-export type Role = "CITIZEN" | "AUTHORITY" | "ADMIN";
+export type Role = "CITIZEN" | "AUTHORITY" | "ADMIN" | "FIELD_OFFICER";
 
 export interface AuthResponse {
   token: string;
@@ -66,6 +66,18 @@ export interface RegisterRequest {
   password: string;
   phone?: number | null;
   role?: Role;
+}
+
+/** Field officer user (auth-service) — safe projection used by the assignment UI. */
+export interface FieldOfficer {
+  id: number;
+  name: string;
+  email: string;
+}
+
+/** Body for PUT /api/v1/complaints/admin/{id}/assign */
+export interface AssignComplaintRequest {
+  fieldOfficerId: number;
 }
 
 export interface UserProfile {

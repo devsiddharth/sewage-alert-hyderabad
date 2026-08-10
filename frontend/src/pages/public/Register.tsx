@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { homePathFor } from "@/lib/utils";
 
 export function Register() {
   const { register } = useAuth();
@@ -36,9 +37,7 @@ export function Register() {
         password,
         phone: phone ? Number(phone) : null,
       });
-      navigate(auth.role === "ADMIN" || auth.role === "AUTHORITY" ? "/admin" : "/dashboard", {
-        replace: true,
-      });
+      navigate(homePathFor(auth.role), { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unable to create your account. Please try again.");
     } finally {

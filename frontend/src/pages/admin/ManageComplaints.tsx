@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowDown, ArrowUp, CheckCircle2, Eye, Filter, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Eye, Filter, MapPin, Search, UserRoundCheck, UserRoundX } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
-import { StatusBadge, PriorityBadge } from "@/components/ui/Badge";
+import { Badge, StatusBadge, PriorityBadge } from "@/components/ui/Badge";
 import { EmptyState, Skeleton } from "@/components/ui/States";
 import { Pagination } from "@/components/ui/Pagination";
 import { ComplaintDetailView } from "@/components/complaints/ComplaintDetail";
+import { AssignOfficerModal } from "@/components/admin/AssignOfficerModal";
 import { useComplaints } from "@/hooks/useComplaints";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { useToast } from "@/lib/toast";
+import { assignComplaint, fetchFieldOfficers } from "@/services/assignment";
 import { complaintCode, formatDateTime, timeAgo } from "@/lib/utils";
-import type { Complaint, ComplaintPriority, ComplaintStatus } from "@/types";
+import type { Complaint, ComplaintPriority, ComplaintStatus, FieldOfficer } from "@/types";
 
 const PAGE_SIZE = 8;
 const STATUSES: ComplaintStatus[] = ["PENDING", "IN_PROGRESS", "RESOLVED", "REJECTED"];
@@ -75,6 +77,30 @@ export function ManageComplaints() {
   const [page, setPage] = useState(1);
   const [detailId, setDetailId] = useState<number | null>(null);
   const [editing, setEditing] = useState<Complaint | null>(null);
+
+  // Field officers for the assignment workflow
+  const [officers, setOfficers] = useState<FieldOfficer[]>([]);
+  const [officersLoading, setOfficersLoading] = useState(true);
+  const [assignTarget, setAssignTarget] = useState<Complaint | null>(null);
+
+  const officerName = useMemo(() => new Map(officers.map((o) => [o.id, o.name])), [officers]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFieldOfficers()
+      .then((list) => {
+        if (!cancelled) setOfficers(list);
+      })
+      .catch(() => {
+        // non-fatal — the table still renders; the modal will show an error state
+      })
+      .finally(() => {
+        if (!cancelled) setOfficersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [statusVal, setStatusVal] = useState<ComplaintStatus>("IN_PROGRESS");
   const [priorityVal, setPriorityVal] = useState<ComplaintPriority | "">("");
@@ -164,6 +190,21 @@ export function ManageComplaints() {
     }
   };
 
+  const submitAssignment = async (complaintId: number, fieldOfficerId: number) => {
+    try {
+      const updated = await assignComplaint(complaintId, fieldOfficerId);
+      const officer = officers.find((o) => o.id === fieldOfficerId);
+      toast(
+        "success",
+        updated.assignedTo ? "Complaint reassigned" : "Complaint assigned",
+        `${complaintCode(complaintId)} → ${officer?.name ?? `Officer #${fieldOfficerId}`}`
+      );
+      void reload();
+    } catch (e) {
+      toast("error", "Assignment failed", e instanceof Error ? e.message : undefined);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -211,12 +252,14 @@ export function ManageComplaints() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
+            <table className="w-full min-w-[920px] text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
                   <SortHeader label="ID" k="createdAt" sort={sort} sortDir={sortDir} onToggle={toggleSort} />
                   <th className="px-4 py-3 font-semibold sm:px-6">Title</th>
+                  <th className="px-4 py-3 font-semibold sm:px-6">Location</th>
                   <th className="px-4 py-3 font-semibold sm:px-6">Status</th>
+                  <th className="px-4 py-3 font-semibold sm:px-6">Assigned to</th>
                   <SortHeader label="Priority" k="priority" sort={sort} sortDir={sortDir} onToggle={toggleSort} />
                   <th className="px-4 py-3 font-semibold sm:px-6">Reported</th>
                   <th className="px-4 py-3 text-right font-semibold sm:px-6">Actions</th>
@@ -230,7 +273,27 @@ export function ManageComplaints() {
                       <p className="truncate font-medium text-ink">{c.title}</p>
                       <p className="truncate text-xs text-muted">{c.description}</p>
                     </td>
+                    <td className="px-4 py-3.5 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5 font-mono text-xs text-muted">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        {c.latitude.toFixed(4)}, {c.longitude.toFixed(4)}
+                      </span>
+                    </td>
                     <td className="px-4 py-3.5 sm:px-6"><StatusBadge status={c.status} /></td>
+                    <td className="px-4 py-3.5 sm:px-6">
+                      {officersLoading ? (
+                        <Skeleton className="h-5 w-28 rounded-full" />
+                      ) : c.assignedTo ? (
+                        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ink">
+                          <UserRoundCheck className="h-3.5 w-3.5 text-brand" aria-hidden />
+                          {officerName.get(c.assignedTo) ?? `Officer #${c.assignedTo}`}
+                        </span>
+                      ) : (
+                        <Badge tone="slate">
+                          <UserRoundX className="h-3 w-3" aria-hidden /> Unassigned
+                        </Badge>
+                      )}
+                    </td>
                     <td className="px-4 py-3.5 sm:px-6"><PriorityBadge priority={c.priority} /></td>
                     <td className="px-4 py-3.5 text-muted sm:px-6" title={formatDateTime(c.createdAt)}>{timeAgo(c.createdAt)}</td>
                     <td className="px-4 py-3.5 sm:px-6">
@@ -244,9 +307,20 @@ export function ManageComplaints() {
                           <Eye className="h-4 w-4" />
                         </button>
                         {c.status !== "RESOLVED" && c.status !== "REJECTED" && (
-                          <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
-                            Update status
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant={c.assignedTo ? "ghost" : "outline"}
+                              icon={<UserRoundCheck className="h-3.5 w-3.5" />}
+                              onClick={() => setAssignTarget(c)}
+                              title={c.assignedTo ? "Reassign to another officer" : "Assign a field officer"}
+                            >
+                              {c.assignedTo ? "Reassign" : "Assign"}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => openEdit(c)}>
+                              Update status
+                            </Button>
+                          </>
                         )}
                         {c.status === "IN_PROGRESS" && (
                           <Button size="sm" variant="secondary" icon={<CheckCircle2 className="h-3.5 w-3.5" />} onClick={() => void quickResolve(c)}>
@@ -268,6 +342,16 @@ export function ManageComplaints() {
       <Modal open={detailId !== null} onClose={() => setDetailId(null)} title="Complaint details" size="lg">
         {detailId !== null && <ComplaintDetailView complaintId={detailId} onNotFound={() => setDetailId(null)} />}
       </Modal>
+
+      {/* Assign / reassign modal */}
+      <AssignOfficerModal
+        open={assignTarget !== null}
+        onClose={() => setAssignTarget(null)}
+        complaint={assignTarget}
+        officers={officers}
+        officersLoading={officersLoading}
+        onAssign={submitAssignment}
+      />
 
       {/* Status update modal */}
       <Modal

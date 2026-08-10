@@ -68,6 +68,16 @@ export function complaintCode(id: number): string {
 }
 
 /**
+ * Landing path for a logged-in user based on their role — centralizes the
+ * role → route mapping used by login/register redirects and route guards.
+ */
+export function homePathFor(role: string | null | undefined): string {
+  if (role === "FIELD_OFFICER") return "/officer";
+  if (role === "ADMIN" || role === "AUTHORITY") return "/admin";
+  return "/dashboard";
+}
+
+/**
  * Compress an image file to a resized JPEG File (max dimension px, quality 0..1).
  *
  * The result is a real binary File (never a base64 string) so it can be attached to
