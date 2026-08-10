@@ -9,6 +9,11 @@ import { Login } from "@/pages/public/Login";
 import { Register } from "@/pages/public/Register";
 import { ForgotPassword } from "@/pages/public/ForgotPassword";
 import { TrackComplaint } from "@/pages/public/TrackComplaint";
+import { EventsPage as PublicEventsPage } from "@/pages/public/Events";
+import { ArticlesPage as PublicArticlesPage } from "@/pages/public/Articles";
+import { NgosPage as PublicNgosPage } from "@/pages/public/Ngos";
+import { LakesPage as PublicLakesPage } from "@/pages/public/Lakes";
+import { InfrastructurePage } from "@/pages/public/Infrastructure";
 
 import { CitizenLayout } from "@/pages/dashboard/CitizenLayout";
 import { DashboardHome } from "@/pages/dashboard/DashboardHome";
@@ -71,6 +76,11 @@ export default function App() {
               />
               <Route path="/track" element={<TrackComplaint />} />
               <Route path="/track/:id" element={<TrackComplaint />} />
+              <Route path="/events" element={<PublicEventsPage />} />
+              <Route path="/articles" element={<PublicArticlesPage />} />
+              <Route path="/ngos" element={<PublicNgosPage />} />
+              <Route path="/lakes" element={<PublicLakesPage />} />
+              <Route path="/infrastructure" element={<InfrastructurePage />} />
             </Route>
 
             {/* Citizen dashboard */}

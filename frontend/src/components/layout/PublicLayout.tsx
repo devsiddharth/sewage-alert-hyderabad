@@ -8,9 +8,12 @@ import { cn } from "@/lib/cn";
 
 const links = [
   { to: "/", label: "Home", end: true },
-  { to: "/#features", label: "Features" },
-  { to: "/#how-it-works", label: "How it works" },
   { to: "/track", label: "Track Complaint" },
+  { to: "/events", label: "Events" },
+  { to: "/articles", label: "Articles" },
+  { to: "/ngos", label: "NGOs" },
+  { to: "/lakes", label: "Lakes" },
+  { to: "/infrastructure", label: "Infrastructure" },
 ];
 
 export function PublicLayout() {
@@ -152,6 +155,16 @@ function Footer() {
             <li><Link className="transition-colors hover:text-brand" to="/register">Create an account</Link></li>
             <li><Link className="transition-colors hover:text-brand" to="/#how-it-works">How it works</Link></li>
             <li><Link className="transition-colors hover:text-brand" to="/#faq">FAQ</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-ink">Community</h3>
+          <ul className="mt-4 space-y-2.5 text-sm text-muted">
+            <li><Link className="transition-colors hover:text-brand" to="/events">Events</Link></li>
+            <li><Link className="transition-colors hover:text-brand" to="/articles">Articles</Link></li>
+            <li><Link className="transition-colors hover:text-brand" to="/ngos">NGOs</Link></li>
+            <li><Link className="transition-colors hover:text-brand" to="/lakes">Lakes</Link></li>
+            <li><Link className="transition-colors hover:text-brand" to="/infrastructure">Infrastructure</Link></li>
           </ul>
         </div>
         <div>

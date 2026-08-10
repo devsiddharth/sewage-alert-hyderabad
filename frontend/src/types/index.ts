@@ -256,6 +256,62 @@ export interface LakeRequest {
 }
 
 // ---------------------------------------------------------------------------
+// External API payloads (community-service) — returned by the /latest, /search
+// and /external endpoints. These are sanitized DTOs from GNews / Google Places
+// / OpenStreetMap Overpass / Telangana ArcGIS.
+// ---------------------------------------------------------------------------
+
+/** GET /api/v1/articles/latest (GNews) */
+export interface ArticleFeedItem {
+  title: string;
+  description: string;
+  imageUrl: string;
+  articleUrl: string;
+  source: string;
+  author: string;
+  publishedAt: string;
+}
+
+/** GET /api/v1/ngos/search (Google Places) */
+export interface NgoSearchResult {
+  name: string;
+  address: string;
+  phone: string;
+  rating: number | null;
+  website: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+/** GET /api/v1/lakes/external (OpenStreetMap Overpass) */
+export interface LakeGeoData {
+  name: string;
+  latitude: number;
+  longitude: number;
+  geometry: { lat: number; lon: number }[];
+  address: {
+    street: string | null;
+    city: string | null;
+    postcode: string | null;
+    state: string | null;
+    formatted: string | null;
+  } | null;
+}
+
+/** GET /api/v1/treatment-plants/external (Telangana ArcGIS open data) */
+export interface StpLocationData {
+  name: string;
+  latitude: number | null;
+  longitude: number | null;
+  yearOfCommissioning: number | null;
+  operationalStatus: string;
+  installedCapacityMld: number | null;
+  utilizationCapacityMld: number | null;
+  technology: string;
+  frequencyOfMonitoring: string;
+}
+
+// ---------------------------------------------------------------------------
 // Issue categories shown in the report form. The backend Complaint entity does
 // not carry a category column, so the selected category is embedded into the
 // complaint title ("Category — custom title") and the severity/landmark are
