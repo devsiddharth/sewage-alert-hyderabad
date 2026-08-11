@@ -14,6 +14,10 @@ public enum NotificationType {
     COMPLAINT_REJECTED,      // Complaint was rejected
     COMPLAINT_REOPENED,      // Closed complaint was reopened
 
+    USER_REGISTERED,                // New account created — verification email requested
+    EMAIL_VERIFICATION_REQUESTED,   // Resend-verification request — verification email re-issued
+    EMAIL_VERIFIED,                 // Customer confirmed their email — welcome email (optional)
+
     COMMUNITY_EVENT,         // Event published / citizen registered for an event
     ARTICLE,                 // New educational article published (future-ready)
 

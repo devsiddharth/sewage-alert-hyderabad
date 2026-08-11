@@ -61,6 +61,22 @@ app:
     delivery-exchange: notification.delivery.exchange
     delivery-routing-key: notification.delivered
 
+# Public frontend origin — used to build email verification links (configurable per env).
+# Development: http://localhost:5173 · Production: https://your-production-domain.com
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+
+# EmailJS REST API integration — credentials come from the environment, never from source.
+# The private key is required for server-side sends (accessToken). Without credentials the
+# service still runs; emails are skipped with a warning log.
+emailjs:
+  service-id: ${EMAILJS_SERVICE_ID:}
+  template-id: ${EMAILJS_TEMPLATE_ID:}
+  public-key: ${EMAILJS_PUBLIC_KEY:}
+  private-key: ${EMAILJS_PRIVATE_KEY:}
+  # Optional: separate template for the post-verification welcome email. When blank,
+  # the welcome email is not sent.
+  welcome-template-id: ${EMAILJS_WELCOME_TEMPLATE_ID:}
+
 # Eureka Client Configuration
 eureka:
   client:

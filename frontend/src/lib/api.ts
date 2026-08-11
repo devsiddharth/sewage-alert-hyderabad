@@ -45,11 +45,14 @@ export const session = {
 export class ApiError extends Error {
   status: number;
   details: unknown;
-  constructor(message: string, status: number, details?: unknown) {
+  /** Application-specific error code (e.g. EMAIL_NOT_VERIFIED) from the backend. */
+  code?: string;
+  constructor(message: string, status: number, details?: unknown, code?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.details = details;
+    this.code = code;
   }
 }
 
@@ -96,7 +99,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       session.clear();
       window.dispatchEvent(new Event("sa:auth-expired"));
     }
-    throw new ApiError(message, res.status, body?.error);
+    throw new ApiError(message, res.status, body?.error, body?.code);
   }
 
   return body?.data as T;

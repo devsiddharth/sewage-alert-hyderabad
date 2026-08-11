@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  BadgeCheck,
   Bell,
   BellRing,
   BookOpen,
@@ -10,6 +11,7 @@ import {
   Circle,
   Clock,
   FilePlus2,
+  Mail,
   Megaphone,
   RotateCcw,
   XCircle,
@@ -36,6 +38,9 @@ const typeMeta: Record<NotificationType, { icon: LucideIcon; tone: string }> = {
   COMPLAINT_RESOLVED: { icon: CheckCircle2, tone: "bg-emerald-50 text-emerald-600" },
   COMPLAINT_REJECTED: { icon: XCircle, tone: "bg-red-50 text-red-600" },
   COMPLAINT_REOPENED: { icon: RotateCcw, tone: "bg-purple-50 text-purple-600" },
+  USER_REGISTERED: { icon: Mail, tone: "bg-brand-soft text-brand" },
+  EMAIL_VERIFICATION_REQUESTED: { icon: Mail, tone: "bg-brand-soft text-brand" },
+  EMAIL_VERIFIED: { icon: BadgeCheck, tone: "bg-emerald-50 text-emerald-600" },
   COMMUNITY_EVENT: { icon: CalendarDays, tone: "bg-teal-50 text-teal-600" },
   ARTICLE: { icon: BookOpen, tone: "bg-sky-50 text-sky-600" },
   SYSTEM: { icon: BellRing, tone: "bg-slate-100 text-slate-600" },
@@ -44,6 +49,9 @@ const typeMeta: Record<NotificationType, { icon: LucideIcon; tone: string }> = {
 
 // Human labels for non-complaint references
 const typeLabel: Partial<Record<NotificationType, string>> = {
+  USER_REGISTERED: "Account",
+  EMAIL_VERIFICATION_REQUESTED: "Account",
+  EMAIL_VERIFIED: "Account",
   COMMUNITY_EVENT: "Community event",
   ARTICLE: "Article",
   SYSTEM: "System update",

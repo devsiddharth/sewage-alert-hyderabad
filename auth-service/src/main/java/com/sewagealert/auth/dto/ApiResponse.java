@@ -7,6 +7,10 @@ public class ApiResponse<T> {
     private T data;
     private Object error;
 
+    // code: Application-specific error code (e.g. EMAIL_NOT_VERIFIED) so clients can
+    // branch on failure type without parsing the human-readable message.
+    private String code;
+
     public ApiResponse() {}
 
     public ApiResponse(boolean success, String message) {
@@ -35,6 +39,13 @@ public class ApiResponse<T> {
         return new ApiResponse<>(false, message, errorDetails, true);
     }
 
+    // errorWithCode: Error response carrying an application-specific error code.
+    public static <T> ApiResponse<T> errorWithCode(String code, String message, Object errorDetails) {
+        ApiResponse<T> response = new ApiResponse<>(false, message, errorDetails, true);
+        response.setCode(code);
+        return response;
+    }
+
     // Getters and Setters
     public boolean isSuccess() { return success; }
     public void setSuccess(boolean success) { this.success = success; }
@@ -47,4 +58,7 @@ public class ApiResponse<T> {
 
     public Object getError() { return error; }
     public void setError(Object error) { this.error = error; }
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
 }
