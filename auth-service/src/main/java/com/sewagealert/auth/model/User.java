@@ -28,6 +28,14 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    // emailVerified: Gates login until the citizen confirms their email address.
+    // New registrations start as false; seeded/staff accounts are created verified.
+    // The column default is TRUE so pre-existing rows (added before this feature) stay
+    // able to log in when ddl-auto:update adds the column — the entity constructor still
+    // forces false for every new registration.
+    @Column(name = "email_verified", nullable = false, columnDefinition = "boolean default true")
+    private boolean emailVerified;
+
     private Long phone;
 
     @Enumerated(EnumType.STRING)
@@ -59,5 +67,6 @@ public class User {
         this.password = password;
         this.phone = phone;
         this.role = role;
+        this.emailVerified = false; // new accounts must verify before they can log in
     }
 }

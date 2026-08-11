@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowRight, Eye, EyeOff, LogIn } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, LogIn, MailWarning, RefreshCw } from "lucide-react";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 import { useAuth } from "@/lib/auth";
-import { ApiError } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
+import { useToast } from "@/lib/toast";
 import { homePathFor } from "@/lib/utils";
 
 export function Login() {
@@ -14,11 +15,15 @@ export function Login() {
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
 
+  const { toast } = useToast();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [emailUnverified, setEmailUnverified] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,13 +33,34 @@ export function Login() {
       return;
     }
     setLoading(true);
+    setEmailUnverified(false);
     try {
       const auth = await login(email.trim(), password);
       navigate(from ?? homePathFor(auth.role), { replace: true });
     } catch (err) {
+      if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
+        setEmailUnverified(true);
+      }
       setError(err instanceof ApiError ? err.message : "Unable to sign in. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resending) return;
+    setResending(true);
+    try {
+      await api.post<null>("/api/v1/auth/resend-verification", { email: email.trim() });
+      toast("success", "Verification email sent", "Check your inbox — the link expires in 30 minutes.");
+    } catch (resendErr) {
+      toast(
+        "error",
+        "Could not resend",
+        resendErr instanceof ApiError ? resendErr.message : "Please try again later."
+      );
+    } finally {
+      setResending(false);
     }
   };
 
@@ -47,6 +73,25 @@ export function Login() {
         {error && (
           <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 animate-fade-in">
             {error}
+          </div>
+        )}
+        {emailUnverified && (
+          <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 animate-fade-in">
+            <p className="flex items-start gap-2 text-sm font-medium text-amber-800">
+              <MailWarning className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+              Your email hasn&apos;t been verified yet. Check your inbox for the verification link,
+              or resend it below.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleResend}
+              disabled={resending}
+              icon={<RefreshCw className="h-4 w-4" />}
+            >
+              {resending ? "Sending…" : "Resend verification email"}
+            </Button>
           </div>
         )}
         <Field label="Email address" required>

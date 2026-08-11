@@ -48,6 +48,14 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
+        <!-- Spring AMQP: Publishes user-auth domain events (USER_REGISTERED, EMAIL_VERIFIED)
+             to RabbitMQ — the Notification Service consumes them and sends transactional
+             emails. Keeps this service decoupled from email providers. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
         <!-- Test: JUnit 5, AssertJ, Spring Boot test utilities for the config/seeder tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

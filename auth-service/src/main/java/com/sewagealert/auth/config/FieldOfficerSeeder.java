@@ -41,6 +41,8 @@ public class FieldOfficerSeeder implements CommandLineRunner {
             officer.setEmail(config.getEmail());
             officer.setPassword(passwordEncoder.encode(config.getPassword()));
             officer.setRole(Role.FIELD_OFFICER);
+            // Seeded staff accounts are pre-verified — there is no inbox behind these addresses.
+            officer.setEmailVerified(true);
 
             userRepository.save(officer);
             created++;
