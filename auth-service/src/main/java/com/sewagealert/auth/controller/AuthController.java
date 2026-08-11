@@ -5,6 +5,7 @@ import com.sewagealert.auth.dto.AuthResponse;
 import com.sewagealert.auth.dto.FieldOfficerResponse;
 import com.sewagealert.auth.dto.LoginRequest;
 import com.sewagealert.auth.dto.RegisterRequest;
+import com.sewagealert.auth.dto.ResendVerificationRequest;
 import com.sewagealert.auth.exception.ForbiddenException;
 import com.sewagealert.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -36,6 +37,27 @@ public class AuthController {
         AuthResponse authResponse = authService.login(request);
         return ResponseEntity
                 .ok(ApiResponse.success("Login successful", authResponse));
+    }
+
+    @GetMapping("/verify-email")
+    // GET /api/v1/auth/verify-email?token=...: Validates the one-time verification token,
+    // marks the account verified and the token used. Permitted without authentication.
+    public ResponseEntity<ApiResponse<Void>> verifyEmail(@RequestParam("token") String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity
+                .ok(ApiResponse.success("Email verified successfully.", null));
+    }
+
+    @PostMapping("/resend-verification")
+    // POST /api/v1/auth/resend-verification: Re-issues a verification token for an unverified
+    // account. The response is intentionally generic to prevent account enumeration, and the
+    // endpoint is throttled server-side (one email per account per minute).
+    public ResponseEntity<ApiResponse<Void>> resendVerification(
+            @Valid @RequestBody ResendVerificationRequest request) {
+        authService.resendVerification(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(
+                "If the account exists and requires verification, a verification email has been sent.",
+                null));
     }
 
     @GetMapping("/profile")

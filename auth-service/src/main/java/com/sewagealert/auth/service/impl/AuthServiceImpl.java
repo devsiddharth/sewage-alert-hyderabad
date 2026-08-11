@@ -8,13 +8,16 @@ import com.sewagealert.auth.dto.LoginRequest;
 import com.sewagealert.auth.dto.RegisterRequest;
 import com.sewagealert.auth.dto.UserRoleResponse;
 import com.sewagealert.auth.exception.EmailAlreadyExistsException;
+import com.sewagealert.auth.exception.EmailNotVerifiedException;
 import com.sewagealert.auth.exception.InvalidCredentialsException;
 import com.sewagealert.auth.exception.UserNotFoundException;
 import com.sewagealert.auth.model.Role;
 import com.sewagealert.auth.model.User;
+import com.sewagealert.auth.producer.NotificationEventProducer;
 import com.sewagealert.auth.repository.UserRepository;
 import com.sewagealert.auth.security.JwtTokenProvider;
 import com.sewagealert.auth.service.AuthService;
+import com.sewagealert.auth.service.EmailVerificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -32,6 +35,8 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailVerificationService emailVerificationService;
+    private final NotificationEventProducer notificationEventProducer;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -49,7 +54,8 @@ public class AuthServiceImpl implements AuthService {
                 request.getPhone(),
                 role
         );
-
+        // The constructor sets emailVerified=false — new accounts stay unverified until
+        // they confirm the email, and login stays blocked until then.
         user = userRepository.save(user);
 
         CreateUserProfileRequest profileRequest =
@@ -62,25 +68,21 @@ public class AuthServiceImpl implements AuthService {
         try {
             userServiceClient.createProfile(profileRequest);
         } catch (Exception ex) {
-            log.error("Failed to create user profile", ex);
-
-            // We'll decide how to handle this:
-            // - rollback
-            // - retry
-            // - compensation
-            // - event-based approach
+            log.error("Failed to create user profile for userId={}", user.getId(), ex);
+            // Profile creation is best-effort (existing behaviour) — the account remains usable.
         }
 
-        String token = jwtTokenProvider.generateToken(
-                user.getId(),
-                user.getEmail(),
-                user.getRole()
-        );
+        // Generate the single-use verification token and hand it to the Notification Service
+        // via RabbitMQ — the Auth Service never talks to the email provider directly.
+        String verificationToken = emailVerificationService.createVerificationToken(user.getId());
+        notificationEventProducer.publishUserRegistered(
+                user.getId(), user.getName(), user.getEmail(), verificationToken);
 
-        log.info("New user registered: {} with role {}", user.getEmail(), user.getRole());
+        log.info("User registration event published for userId={}, role={}",
+                user.getId(), user.getRole());
 
+        // No JWT is issued — the account is not active until the email is verified.
         return AuthResponse.builder()
-                .token(token)
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -99,6 +101,10 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException("Please verify your email address before logging in.");
+        }
+
         String token = jwtTokenProvider.generateToken(
                 user.getId(),
                 user.getEmail(),
@@ -114,6 +120,27 @@ public class AuthServiceImpl implements AuthService {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .build();
+    }
+
+    @Override
+    public void verifyEmail(String token) {
+        User user = emailVerificationService.verifyEmail(token);
+        // Fire the welcome-email event so the Notification Service can send it (optional channel)
+        notificationEventProducer.publishEmailVerified(user.getId(), user.getName(), user.getEmail());
+        log.info("Email verified and EMAIL_VERIFIED event published for userId={}", user.getId());
+    }
+
+    @Override
+    public void resendVerification(String email) {
+        // Account enumeration protection: the response is identical whether the email is
+        // unknown, already verified, or successfully re-issued.
+        userRepository.findByEmail(email).ifPresent(user -> {
+            String verificationToken = emailVerificationService.resendVerification(user.getId());
+            if (verificationToken != null) {
+                notificationEventProducer.publishVerificationRequested(
+                        user.getId(), user.getName(), user.getEmail(), verificationToken);
+            }
+        });
     }
 
     @Override

@@ -25,6 +25,15 @@ spring:
       hibernate:
         format_sql: true
 
+  # RabbitMQ: Broker used to publish user-auth domain events (USER_REGISTERED, EMAIL_VERIFIED)
+  # consumed by the Notification Service. Publishing is fire-and-forget — a broker outage never
+  # blocks registration/verification (failures are logged by the producer).
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
 eureka:
   client:
     service-url:
@@ -36,6 +45,13 @@ app:
   jwt:
     secret: c2V3YWdlLWFsZXJ0LWh5ZGVyYWJhZC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tZ2VuZXJhdGlvbi0yMDI2
     expiration-ms: 86400000
+  # Email verification token lifetime — the link inside the verification email expires
+  # after this many minutes.
+  verification:
+    token-ttl-minutes: ${VERIFICATION_TOKEN_TTL_MINUTES:30}
+  # Notification event publishing configuration
+  rabbitmq:
+    exchange: notification.exchange
   admin:
     name: Administrator
     email: admin@sewagealert.com

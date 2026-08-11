@@ -190,11 +190,13 @@ Responsibilities
 - Consume domain events from RabbitMQ
 - Store notifications
 - Serve in-app notifications to users
+- Send transactional emails (EmailJS) — verification, welcome, future complaint updates
 
 Features
 
 - RabbitMQ Consumer (topic exchange, DLQ, retries)
 - Event-driven storage (no service writes to its DB directly)
+- EmailJS REST integration (`emailjs.*` env vars) — email delivery stays server-side
 - Paginated APIs, newest first
 - Read / unread tracking (single + bulk)
 - Soft delete
@@ -269,6 +271,68 @@ export CLOUDINARY_API_SECRET=your-secret
 ```
 
 Never commit real credentials — they live in your environment, not in Git.
+
+---
+# ✉️ Email Verification & Email Notifications (EmailJS)
+
+New customer accounts must **verify their email address before they can log in**.
+Emails are sent by the **Notification Service** via the **EmailJS REST API** — the
+React frontend and the Auth Service never talk to EmailJS directly:
+
+```text
+Register ──► Auth Service ──► RabbitMQ (USER_REGISTERED) ──► Notification Service ──► EmailJS ──► Customer inbox
+                                                                                                  │
+                                                                                                  ▼
+Login ◄── emailVerified = true ◄── GET /verify-email?token=… ◄── React /verify-email page ◄── click link
+```
+
+## Configuration
+
+The Notification Service reads these variables via `application.yml`. The
+**private key must only live in your environment** — never commit it:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `EMAILJS_SERVICE_ID` | EmailJS service id (`service_2mr35tu`) | *(empty)* |
+| `EMAILJS_TEMPLATE_ID` | Verification template id (`template_w4koj8i`) | *(empty)* |
+| `EMAILJS_PUBLIC_KEY` | EmailJS public key | *(empty)* |
+| `EMAILJS_PRIVATE_KEY` | EmailJS private key — **env var / deployment secret only** | *(empty)* |
+| `EMAILJS_WELCOME_TEMPLATE_ID` | Optional welcome-email template (post-verification). Template content + setup steps: `notification-service/EMAILJS-WELCOME-TEMPLATE.md` | *(empty → no welcome email)* |
+| `FRONTEND_URL` | Public origin of the React app (verification link base) | `http://localhost:5173` |
+| `VERIFICATION_TOKEN_TTL_MINUTES` | Verification link lifetime (Auth Service) | `30` |
+
+```bash
+# Linux/macOS
+cd notification-service
+export EMAILJS_SERVICE_ID=service_2mr35tu
+export EMAILJS_TEMPLATE_ID=template_w4koj8i
+export EMAILJS_PUBLIC_KEY=your-public-key
+export EMAILJS_PRIVATE_KEY=your-private-key
+export FRONTEND_URL=http://localhost:5173
+mvn spring-boot:run
+```
+
+A git-ignored local copy with your real values can live at
+`notification-service/.env.local` (see `.env.example` at the repo root). Without
+credentials the service still starts — emails are skipped and logged, and customers
+can use **Resend verification email** later.
+
+## Registration flow
+
+1. Citizen registers → account is created **unverified** (no JWT is issued).
+2. Auth Service generates a secure, single-use verification token (SHA-256 hashed
+   in the DB, expires in 30 minutes) and publishes `USER_REGISTERED` to RabbitMQ.
+3. Notification Service consumes the event and sends the verification email via
+   EmailJS — the button links to `{FRONTEND_URL}/verify-email?token=…`.
+4. Citizen clicks the link → `GET /api/v1/auth/verify-email` validates the token,
+   marks it used, sets `emailVerified = true`, and publishes `EMAIL_VERIFIED`.
+5. Notification Service consumes `EMAIL_VERIFIED` and sends the **welcome email**
+   (only when `EMAILJS_WELCOME_TEMPLATE_ID` is set).
+6. Citizen logs in → JWT issued. Unverified logins are rejected with code
+   `EMAIL_NOT_VERIFIED`.
+
+`POST /api/v1/auth/resend-verification` re-issues a token (throttled to one email
+per account per minute; the response is generic to prevent account enumeration).
 
 ---
 # 🔄 Inter-Service Communication

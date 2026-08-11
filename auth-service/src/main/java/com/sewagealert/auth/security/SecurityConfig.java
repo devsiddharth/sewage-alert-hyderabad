@@ -28,7 +28,14 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/register", "/api/v1/auth/login").permitAll()
+                // Public auth endpoints — email verification links are opened from the
+                // customer's inbox, so they must not require a JWT.
+                .requestMatchers(
+                        "/api/v1/auth/register",
+                        "/api/v1/auth/login",
+                        "/api/v1/auth/verify-email",
+                        "/api/v1/auth/resend-verification"
+                ).permitAll()
                 // Internal service-to-service endpoints (role verification for other
                 // microservices) — no user JWT is involved in those calls. These follow
                 // the /api/v1/internal/ convention which the gateway does NOT route,

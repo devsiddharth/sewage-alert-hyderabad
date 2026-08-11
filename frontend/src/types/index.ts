@@ -8,6 +8,8 @@ export interface ApiResponse<T> {
   message: string;
   data: T;
   error: unknown;
+  /** Application-specific error code (e.g. EMAIL_NOT_VERIFIED) — only set on failures. */
+  code?: string;
 }
 
 /** Generic pagination envelope returned by the Notification Service. */
@@ -28,6 +30,9 @@ export type NotificationType =
   | "COMPLAINT_RESOLVED"
   | "COMPLAINT_REJECTED"
   | "COMPLAINT_REOPENED"
+  | "USER_REGISTERED"
+  | "EMAIL_VERIFICATION_REQUESTED"
+  | "EMAIL_VERIFIED"
   | "COMMUNITY_EVENT"
   | "ARTICLE"
   | "SYSTEM"
@@ -52,7 +57,8 @@ export interface AppNotification {
 export type Role = "CITIZEN" | "AUTHORITY" | "ADMIN" | "FIELD_OFFICER";
 
 export interface AuthResponse {
-  token: string;
+  /** JWT — absent on register (accounts must verify their email before logging in). */
+  token: string | null;
   type: string; // "Bearer"
   id: number;
   name: string;

@@ -41,6 +41,22 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), null));
     }
 
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    // handleEmailNotVerified: Unverified accounts are rejected at login with an explicit
+    // application code so the frontend can offer the resend-verification path.
+    public ResponseEntity<ApiResponse<String>> handleEmailNotVerified(EmailNotVerifiedException ex) {
+        return ResponseEntity
+                .status(UNAUTHORIZED)
+                .body(ApiResponse.errorWithCode("EMAIL_NOT_VERIFIED", ex.getMessage(), null));
+    }
+
+    @ExceptionHandler(InvalidVerificationTokenException.class)
+    public ResponseEntity<ApiResponse<String>> handleInvalidVerificationToken(InvalidVerificationTokenException ex) {
+        return ResponseEntity
+                .status(BAD_REQUEST)
+                .body(ApiResponse.errorWithCode("INVALID_VERIFICATION_TOKEN", ex.getMessage(), null));
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ApiResponse<String>> handleUserNotFound(UserNotFoundException ex) {
         return ResponseEntity

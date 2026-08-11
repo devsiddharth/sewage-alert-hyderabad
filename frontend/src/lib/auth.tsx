@@ -36,7 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const applySession = useCallback((auth: AuthResponse) => {
-    session.setToken(auth.token);
+    // Registration responses carry no token — only persist sessions that have one.
+    if (auth.token) session.setToken(auth.token);
     session.setUser(toStored(auth));
     setUser(auth);
   }, []);
@@ -58,14 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [applySession]
   );
 
-  const register = useCallback(
-    async (data: RegisterRequest) => {
-      const auth = await api.post<AuthResponse>("/api/v1/auth/register", data);
-      applySession(auth);
-      return auth;
-    },
-    [applySession]
-  );
+  // Registration does NOT start a session: the account is inactive until the customer
+  // verifies their email, so no JWT is issued. The returned AuthResponse has no token;
+  // the register page uses it to show the verification-pending state.
+  const register = useCallback(async (data: RegisterRequest) => {
+    return api.post<AuthResponse>("/api/v1/auth/register", data);
+  }, []);
 
   const logout = useCallback(() => {
     session.clear();

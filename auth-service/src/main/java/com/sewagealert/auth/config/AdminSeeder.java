@@ -32,6 +32,8 @@ public class AdminSeeder implements CommandLineRunner {
         admin.setEmail(adminProperties.getEmail());
         admin.setPassword(passwordEncoder.encode(adminProperties.getPassword()));
         admin.setRole(Role.ADMIN);
+        // Seeded staff accounts are pre-verified — there is no inbox behind these addresses.
+        admin.setEmailVerified(true);
 
         userRepository.save(admin);
 
