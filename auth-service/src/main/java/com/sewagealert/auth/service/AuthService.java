@@ -14,11 +14,12 @@ public interface AuthService {
 
     AuthResponse login(LoginRequest request);
 
-    // verifyEmail: Validates a verification token and activates the account.
-    // Publishes EMAIL_VERIFIED so the Notification Service can send the welcome email.
-    void verifyEmail(String token);
+    // verifyEmailWithCode: Validates the 6-digit code typed into the registration flow and
+    // activates the account (OTP-only — no emailed link). Publishes EMAIL_VERIFIED so the
+    // welcome email can be sent.
+    void verifyEmailWithCode(String email, String code);
 
-    // resendVerification: Issues a fresh verification token and re-publishes the
+    // resendVerification: Issues a fresh verification code and re-publishes the
     // verification request. Always returns a generic response to prevent account enumeration.
     void resendVerification(String email);
 

@@ -283,7 +283,10 @@ React frontend and the Auth Service never talk to EmailJS directly:
 Register ──► Auth Service ──► RabbitMQ (USER_REGISTERED) ──► Notification Service ──► EmailJS ──► Customer inbox
                                                                                                   │
                                                                                                   ▼
-Login ◄── emailVerified = true ◄── GET /verify-email?token=… ◄── React /verify-email page ◄── click link
+                    Customer types the 6-digit code into the registration page ──► POST /api/v1/auth/verify-code
+                                                                                                  │
+                                                                                                  ▼
+Login ◄── emailVerified = true
 ```
 
 ## Configuration
@@ -298,8 +301,13 @@ The Notification Service reads these variables via `application.yml`. The
 | `EMAILJS_PUBLIC_KEY` | EmailJS public key | *(empty)* |
 | `EMAILJS_PRIVATE_KEY` | EmailJS private key — **env var / deployment secret only** | *(empty)* |
 | `EMAILJS_WELCOME_TEMPLATE_ID` | Optional welcome-email template (post-verification). Template content + setup steps: `notification-service/EMAILJS-WELCOME-TEMPLATE.md` | *(empty → no welcome email)* |
-| `FRONTEND_URL` | Public origin of the React app (verification link base) | `http://localhost:5173` |
-| `VERIFICATION_TOKEN_TTL_MINUTES` | Verification link lifetime (Auth Service) | `30` |
+
+> The verification template (`template_w4koj8i`) renders the typed-in code via the
+> `{{verification_code}}` parameter (plus `{{name}}`, `{{email}}`). Verification is
+> **OTP-only** — the email contains no link. See `notification-service/EMAILJS-WELCOME-TEMPLATE.md`
+> for the exact snippet.
+| `FRONTEND_URL` | Public origin of the React app (used for the welcome-email login link) | `http://localhost:5173` |
+| `VERIFICATION_TOKEN_TTL_MINUTES` | Verification code lifetime (Auth Service) | `30` |
 
 ```bash
 # Linux/macOS
@@ -319,20 +327,45 @@ can use **Resend verification email** later.
 
 ## Registration flow
 
+Verification is asked **during registration itself**: right after submitting the
+form, the customer sees a 6-digit-code screen and types in the code from the email.
+
 1. Citizen registers → account is created **unverified** (no JWT is issued).
-2. Auth Service generates a secure, single-use verification token (SHA-256 hashed
-   in the DB, expires in 30 minutes) and publishes `USER_REGISTERED` to RabbitMQ.
+2. Auth Service generates a secure, single-use 6-digit code (SHA-256 hashed in the
+   DB, expires in 30 minutes) and publishes `USER_REGISTERED` to RabbitMQ.
 3. Notification Service consumes the event and sends the verification email via
-   EmailJS — the button links to `{FRONTEND_URL}/verify-email?token=…`.
-4. Citizen clicks the link → `GET /api/v1/auth/verify-email` validates the token,
-   marks it used, sets `emailVerified = true`, and publishes `EMAIL_VERIFIED`.
+   EmailJS — it contains the code rendered with `{{verification_code}}`. No
+   verification link is sent (OTP-only flow).
+4. The customer types the code into the registration page →
+   `POST /api/v1/auth/verify-code` validates it (max 5 wrong attempts, then a
+   60s lockout), marks it used, sets `emailVerified = true`, and publishes
+   `EMAIL_VERIFIED`.
 5. Notification Service consumes `EMAIL_VERIFIED` and sends the **welcome email**
    (only when `EMAILJS_WELCOME_TEMPLATE_ID` is set).
 6. Citizen logs in → JWT issued. Unverified logins are rejected with code
    `EMAIL_NOT_VERIFIED`.
 
-`POST /api/v1/auth/resend-verification` re-issues a token (throttled to one email
-per account per minute; the response is generic to prevent account enumeration).
+`POST /api/v1/auth/resend-verification` re-issues a fresh code (throttled
+to one email per account per minute; the response is generic to prevent account
+enumeration).
+
+### 🔎 Email not received? Check in this order
+
+1. **RabbitMQ is running** — `cd notification-service && docker compose up -d`.
+   If the Auth Service logged `Failed to publish notification event`, the broker
+   was down at registration time (publishing is fire-and-forget by design).
+2. **EmailJS credentials are set in the Notification Service environment**
+   (`EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`,
+   `EMAILJS_PRIVATE_KEY`). Without them the service logs
+   `EmailJS not configured — skipping verification email`. Copy
+   `notification-service/.env.example` → `.env.local` and fill it in.
+3. **The EmailJS service is activated.** EmailJS emails an activation link to the
+   service's "From Email" address — until it is clicked, every send fails with
+   an error in the Notification Service log (`EmailJS verification email FAILED …`,
+   e.g. *domain not verified*).
+4. **Check spam / promotions** — emails from EmailJS free services often land there.
+5. Retry from the UI: the registration page has a **Resend code** button (60s
+   cooldown), or open the login page and use **Resend verification email**.
 
 ---
 # 🔄 Inter-Service Communication

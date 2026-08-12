@@ -8,7 +8,6 @@ import { Home } from "@/pages/public/Home";
 import { Login } from "@/pages/public/Login";
 import { Register } from "@/pages/public/Register";
 import { ForgotPassword } from "@/pages/public/ForgotPassword";
-import { VerifyEmail } from "@/pages/public/VerifyEmail";
 import { TrackComplaint } from "@/pages/public/TrackComplaint";
 import { EventsPage as PublicEventsPage } from "@/pages/public/Events";
 import { ArticlesPage as PublicArticlesPage } from "@/pages/public/Articles";
@@ -75,7 +74,6 @@ export default function App() {
                   </RedirectIfAuthed>
                 }
               />
-              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/track" element={<TrackComplaint />} />
               <Route path="/track/:id" element={<TrackComplaint />} />
               <Route path="/events" element={<PublicEventsPage />} />

@@ -72,11 +72,12 @@ public class AuthServiceImpl implements AuthService {
             // Profile creation is best-effort (existing behaviour) — the account remains usable.
         }
 
-        // Generate the single-use verification token and hand it to the Notification Service
-        // via RabbitMQ — the Auth Service never talks to the email provider directly.
-        String verificationToken = emailVerificationService.createVerificationToken(user.getId());
+        // Generate the 6-digit verification code and hand it to the Notification Service via
+        // RabbitMQ — the Auth Service never talks to the email provider directly. Verification
+        // is OTP-only: the code is emailed and typed back into the registration page.
+        String otp = emailVerificationService.createVerification(user.getId());
         notificationEventProducer.publishUserRegistered(
-                user.getId(), user.getName(), user.getEmail(), verificationToken);
+                user.getId(), user.getName(), user.getEmail(), otp);
 
         log.info("User registration event published for userId={}, role={}",
                 user.getId(), user.getRole());
@@ -123,11 +124,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void verifyEmail(String token) {
-        User user = emailVerificationService.verifyEmail(token);
+    public void verifyEmailWithCode(String email, String code) {
+        User user = emailVerificationService.verifyEmailWithCode(email, code);
         // Fire the welcome-email event so the Notification Service can send it (optional channel)
         notificationEventProducer.publishEmailVerified(user.getId(), user.getName(), user.getEmail());
-        log.info("Email verified and EMAIL_VERIFIED event published for userId={}", user.getId());
+        log.info("Email verified via code and EMAIL_VERIFIED event published for userId={}", user.getId());
     }
 
     @Override
@@ -135,10 +136,10 @@ public class AuthServiceImpl implements AuthService {
         // Account enumeration protection: the response is identical whether the email is
         // unknown, already verified, or successfully re-issued.
         userRepository.findByEmail(email).ifPresent(user -> {
-            String verificationToken = emailVerificationService.resendVerification(user.getId());
-            if (verificationToken != null) {
+            String otp = emailVerificationService.resendVerification(user.getId());
+            if (otp != null) {
                 notificationEventProducer.publishVerificationRequested(
-                        user.getId(), user.getName(), user.getEmail(), verificationToken);
+                        user.getId(), user.getName(), user.getEmail(), otp);
             }
         });
     }

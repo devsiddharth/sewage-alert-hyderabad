@@ -20,7 +20,7 @@ import java.util.Map;
 //   Producer (Complaint Service etc.)            RabbitMQ                             Notification Service
 //   ──────────────────────────────────           ────────                             ─────────────────────
 //   publish(notification.created) ──────────►    notification.exchange (topic)
-//                                                    │ notification.*
+//                                                    │ notification.#
 //                                                    ▼
 //                                                notification.queue ──(reject after retries)──► notification.dlx ──► notification.dlq
 //
@@ -62,8 +62,11 @@ public class RabbitMqConfig {
 
     @Bean
     public Binding notificationBinding(TopicExchange notificationExchange, Queue notificationQueue) {
-        // Wildcard binding: catches every notification.* routing key, so new event types
-        // are consumed without touching RabbitMQ configuration.
+        // Topic binding with the '#' hash wildcard: catches every routing key under
+        // notification.* — including multi-word keys such as notification.user.registered,
+        // notification.user.verified and notification.status.updated — so new event types
+        // are consumed without touching RabbitMQ configuration. (A single '*' star would
+        // match only one word, silently dropping all three-word keys.)
         return BindingBuilder.bind(notificationQueue).to(notificationExchange).with(properties.getRoutingKeyPattern());
     }
 
