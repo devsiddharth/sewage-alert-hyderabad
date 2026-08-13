@@ -28,22 +28,5 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Build Auth Service
-        working-directory: auth-service
-        run: mvn --batch-mode clean verify
-
-      - name: Build Complaint Service
-        working-directory: complaint-service
-        run: mvn --batch-mode clean verify
-
-      - name: Build Notification Service
-        working-directory: notification-service
-        run: mvn --batch-mode clean verify
-
-      - name: Build API Gateway
-        working-directory: api-gateway
-        run: mvn --batch-mode clean verify
-
-      - name: Build Service Registry
-        working-directory: service-registry
+      - name: Build and test all backend services
         run: mvn --batch-mode clean verify
