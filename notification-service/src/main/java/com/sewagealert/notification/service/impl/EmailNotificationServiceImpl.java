@@ -34,10 +34,10 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
 
         String name = stringValue(metadata, "name");
         String email = stringValue(metadata, "email");
-        String token = stringValue(metadata, "verificationToken");
+        String code = stringValue(metadata, "verificationCode");
 
-        if (name == null || email == null || token == null) {
-            log.warn("Verification email skipped — event {} is missing name/email/verificationToken metadata",
+        if (name == null || email == null || code == null) {
+            log.warn("Verification email skipped — event {} is missing name/email/verificationCode metadata",
                     event.getEventId());
             return;
         }
@@ -48,22 +48,24 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
             return;
         }
 
-        String verificationLink = appProperties.getFrontendUrl() + "/verify-email?token=" + token;
-
+        // OTP-only verification: the email renders the 6-digit code with {{verification_code}}
+        // (see notification-service/EMAILJS-WELCOME-TEMPLATE.md). No verification link is sent.
         Map<String, Object> params = new HashMap<>();
         params.put("name", name);
         params.put("email", email);
-        params.put("verification_link", verificationLink);
+        params.put("verification_code", code);
 
         try {
             emailJsClient.send(emailJsProperties.getTemplateId(), params);
-            log.info("Verification email sent successfully — eventId: {}, userId: {}",
-                    event.getEventId(), event.getUserId());
+            log.info("Verification email sent successfully — eventId: {}, userId: {}, recipient: {}",
+                    event.getEventId(), event.getUserId(), email);
         } catch (Exception ex) {
             // Provider failure — do not rethrow: the notification is already stored and the
-            // customer can resend. Logged with the eventId for correlation, never with the token.
-            log.error("EmailJS verification email failed for eventId: {} — customer can use "
-                    + "resend-verification", event.getEventId(), ex);
+            // customer can resend. The exception message carries the EmailJS HTTP response body
+            // (e.g. "service not activated", invalid template id), which is the first place to
+            // look when an email does not arrive. Never logged with the token or code.
+            log.error("EmailJS verification email FAILED — eventId: {}, recipient: {}, reason: {}",
+                    event.getEventId(), email, ex.toString(), ex);
         }
     }
 

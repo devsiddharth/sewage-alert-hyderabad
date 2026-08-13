@@ -6,6 +6,7 @@ import com.sewagealert.auth.model.EmailVerificationToken;
 import com.sewagealert.auth.model.User;
 import com.sewagealert.auth.repository.EmailVerificationTokenRepository;
 import com.sewagealert.auth.repository.UserRepository;
+import com.sewagealert.auth.util.VerificationTokenGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,8 +23,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * EmailVerificationServiceImplTest: Token lifecycle — generation (hashed, expiring),
- * verification (valid / invalid / expired / used), and resend throttling.
+ * EmailVerificationServiceImplTest: Verification lifecycle — issuance (hashed 6-digit code,
+ * expiring), inline code verification (valid / wrong / unknown email / lockout), and resend
+ * throttling. OTP-only — there is no emailed link/token.
  */
 @ExtendWith(MockitoExtension.class)
 class EmailVerificationServiceImplTest {
@@ -52,25 +54,23 @@ class EmailVerificationServiceImplTest {
         EmailVerificationToken token = new EmailVerificationToken();
         token.setId(1L);
         token.setUserId(userId);
-        token.setTokenHash("some-hash");
+        token.setOtpHash(VerificationTokenGenerator.hash("123456"));
         token.setExpiresAt(LocalDateTime.now().plusMinutes(30));
         token.setUsed(false);
         return token;
     }
 
-    // --- token creation ------------------------------------------------------
+    // --- credential creation -------------------------------------------------
 
     @Test
-    void createVerificationTokenStoresHashedExpiringTokenAndInvalidatesOldOnes() {
+    void createVerificationStoresHashedOtpAndInvalidatesOldOnes() {
         when(tokenRepository.save(any(EmailVerificationToken.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        String rawToken = service.createVerificationToken(7L);
+        String otp = service.createVerification(7L);
 
-        assertThat(rawToken).isNotBlank();
-        assertThat(rawToken).hasSizeGreaterThan(20);
-        // The token is random 256-bit data — it can never be the numeric user id
-        assertThat(rawToken).isNotEqualTo("7");
+        // The code is 6 digits (100000–999999, so no leading zero)
+        assertThat(otp).matches("\\d{6}");
 
         verify(tokenRepository).invalidateByUser(7L);
 
@@ -78,23 +78,24 @@ class EmailVerificationServiceImplTest {
         verify(tokenRepository).save(captor.capture());
         EmailVerificationToken stored = captor.getValue();
 
-        // Only the SHA-256 hash is persisted — never the raw token
-        assertThat(stored.getTokenHash()).isNotEqualTo(rawToken);
-        assertThat(stored.getTokenHash()).hasSize(64);
+        // Only the SHA-256 hash is persisted — never the raw code
+        assertThat(stored.getOtpHash()).isNotEqualTo(otp);
+        assertThat(stored.getOtpHash()).hasSize(64);
         assertThat(stored.getExpiresAt()).isAfter(LocalDateTime.now());
         assertThat(stored.isUsed()).isFalse();
     }
 
-    // --- verification --------------------------------------------------------
+    // --- inline code verification --------------------------------------------
 
     @Test
-    void verifyEmailWithValidTokenVerifiesUserAndMarksTokenUsed() {
+    void verifyEmailWithValidCodeVerifiesUserAndMarksTokenUsed() {
         User user = unverifiedUser();
         EmailVerificationToken token = validToken(7L);
-        when(tokenRepository.findByTokenHash(any())).thenReturn(Optional.of(token));
-        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("customer@example.com")).thenReturn(Optional.of(user));
+        when(tokenRepository.findFirstByUserIdAndUsedFalseOrderByCreatedAtDesc(7L))
+                .thenReturn(Optional.of(token));
 
-        User verified = service.verifyEmail("raw-token");
+        User verified = service.verifyEmailWithCode("customer@example.com", "123456");
 
         assertThat(verified.isEmailVerified()).isTrue();
         assertThat(token.isUsed()).isTrue();
@@ -103,54 +104,89 @@ class EmailVerificationServiceImplTest {
     }
 
     @Test
-    void verifyEmailWithUnknownTokenRejected() {
-        when(tokenRepository.findByTokenHash(any())).thenReturn(Optional.empty());
+    void verifyEmailWithWrongCodeRejected() {
+        User user = unverifiedUser();
+        EmailVerificationToken token = validToken(7L);
+        when(userRepository.findByEmail("customer@example.com")).thenReturn(Optional.of(user));
+        when(tokenRepository.findFirstByUserIdAndUsedFalseOrderByCreatedAtDesc(7L))
+                .thenReturn(Optional.of(token));
 
-        assertThatThrownBy(() -> service.verifyEmail("unknown-token"))
+        assertThatThrownBy(() -> service.verifyEmailWithCode("customer@example.com", "654321"))
                 .isInstanceOf(InvalidVerificationTokenException.class);
+        assertThat(user.isEmailVerified()).isFalse();
+        assertThat(token.isUsed()).isFalse();
+        verify(userRepository, never()).save(any());
     }
 
     @Test
-    void verifyEmailWithExpiredTokenRejected() {
+    void verifyEmailWithExpiredCodeRejected() {
+        User user = unverifiedUser();
         EmailVerificationToken token = validToken(7L);
         token.setExpiresAt(LocalDateTime.now().minusMinutes(1));
-        when(tokenRepository.findByTokenHash(any())).thenReturn(Optional.of(token));
+        when(userRepository.findByEmail("customer@example.com")).thenReturn(Optional.of(user));
+        when(tokenRepository.findFirstByUserIdAndUsedFalseOrderByCreatedAtDesc(7L))
+                .thenReturn(Optional.of(token));
 
-        assertThatThrownBy(() -> service.verifyEmail("expired-token"))
+        assertThatThrownBy(() -> service.verifyEmailWithCode("customer@example.com", "123456"))
                 .isInstanceOf(InvalidVerificationTokenException.class);
         assertThat(token.isUsed()).isFalse();
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void verifyEmailWithUsedTokenRejected() {
-        EmailVerificationToken token = validToken(7L);
-        token.setUsed(true);
-        when(tokenRepository.findByTokenHash(any())).thenReturn(Optional.of(token));
+    void verifyEmailWithCodeForUnknownEmailRejected() {
+        when(userRepository.findByEmail("ghost@example.com")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.verifyEmail("used-token"))
+        assertThatThrownBy(() -> service.verifyEmailWithCode("ghost@example.com", "123456"))
+                .isInstanceOf(InvalidVerificationTokenException.class);
+        verify(tokenRepository, never()).findFirstByUserIdAndUsedFalseOrderByCreatedAtDesc(any());
+    }
+
+    @Test
+    void verifyEmailWithCodeForAlreadyVerifiedUserDoesNotLeakState() {
+        // A verified account has no active token left, so the endpoint answers with the
+        // same generic error as an unknown email — no enumeration side-channel on a
+        // public endpoint (a correct code is required to reach the account at all).
+        User user = unverifiedUser();
+        user.setEmailVerified(true);
+        when(userRepository.findByEmail("customer@example.com")).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.verifyEmailWithCode("customer@example.com", "123456"))
                 .isInstanceOf(InvalidVerificationTokenException.class);
         verify(userRepository, never()).save(any());
     }
 
     @Test
-    void verifyEmailWithBlankTokenRejected() {
-        assertThatThrownBy(() -> service.verifyEmail("  "))
+    void verifyEmailWithCodeLocksOutAfterRepeatedFailures() {
+        User user = unverifiedUser();
+        EmailVerificationToken token = validToken(7L);
+        when(userRepository.findByEmail("customer@example.com")).thenReturn(Optional.of(user));
+        when(tokenRepository.findFirstByUserIdAndUsedFalseOrderByCreatedAtDesc(7L))
+                .thenReturn(Optional.of(token));
+
+        for (int i = 0; i < 5; i++) {
+            assertThatThrownBy(() -> service.verifyEmailWithCode("customer@example.com", "999999"))
+                    .isInstanceOf(InvalidVerificationTokenException.class);
+        }
+
+        // The 6th attempt is rejected while locked out — the code is never even checked
+        assertThatThrownBy(() -> service.verifyEmailWithCode("customer@example.com", "123456"))
                 .isInstanceOf(InvalidVerificationTokenException.class);
-        verify(tokenRepository, never()).findByTokenHash(any());
+        verify(userRepository, never()).save(user);
     }
 
     // --- resend --------------------------------------------------------------
 
     @Test
-    void resendVerificationIssuesFreshTokenForUnverifiedUser() {
+    void resendVerificationIssuesFreshCodeForUnverifiedUser() {
         when(userRepository.findById(7L)).thenReturn(Optional.of(unverifiedUser()));
         when(tokenRepository.save(any(EmailVerificationToken.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        String first = service.resendVerification(7L);
+        String otp = service.resendVerification(7L);
 
-        assertThat(first).isNotBlank();
+        assertThat(otp).isNotNull();
+        assertThat(otp).matches("\\d{6}");
         verify(tokenRepository).invalidateByUser(7L);
     }
 
@@ -163,7 +199,7 @@ class EmailVerificationServiceImplTest {
         String first = service.resendVerification(7L);
         String second = service.resendVerification(7L); // immediate retry
 
-        assertThat(first).isNotBlank();
+        assertThat(first).isNotNull();
         assertThat(second).isNull();
     }
 

@@ -28,12 +28,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public auth endpoints — email verification links are opened from the
-                // customer's inbox, so they must not require a JWT.
+                // Public auth endpoints — registration, login, and the OTP verification
+                // flow must not require a JWT.
                 .requestMatchers(
                         "/api/v1/auth/register",
                         "/api/v1/auth/login",
-                        "/api/v1/auth/verify-email",
+                        "/api/v1/auth/verify-code",
                         "/api/v1/auth/resend-verification"
                 ).permitAll()
                 // Internal service-to-service endpoints (role verification for other

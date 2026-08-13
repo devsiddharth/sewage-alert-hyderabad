@@ -54,7 +54,8 @@ class AuthServiceImplTest {
                 jwtTokenProvider, emailVerificationService, notificationEventProducer);
         when(passwordEncoder.encode(any())).thenReturn("encoded-password");
         when(passwordEncoder.matches(eq("correct-password"), any())).thenReturn(true);
-        when(emailVerificationService.createVerificationToken(any())).thenReturn("raw-verification-token");
+        when(emailVerificationService.createVerification(any()))
+                .thenReturn("123456");
     }
 
     private RegisterRequest registerRequest() {
@@ -90,9 +91,10 @@ class AuthServiceImplTest {
         verify(userRepository).save(userCaptor.capture());
         assertThat(userCaptor.getValue().isEmailVerified()).isFalse();
 
-        verify(emailVerificationService).createVerificationToken(1L);
+        verify(emailVerificationService).createVerification(1L);
+        // OTP-only workflow: only the 6-digit code travels in the event — never the link token
         verify(notificationEventProducer).publishUserRegistered(eq(1L), eq("Siddhartha"),
-                eq("customer@example.com"), eq("raw-verification-token"));
+                eq("customer@example.com"), eq("123456"));
 
         // No JWT — the account must be verified before login
         assertThat(response.getToken()).isNull();
@@ -160,12 +162,12 @@ class AuthServiceImplTest {
     // --- verification --------------------------------------------------------
 
     @Test
-    void verifyEmailPublishesWelcomeEventForVerifiedUser() {
+    void verifyEmailWithCodePublishesWelcomeEventForVerifiedUser() {
         User user = savedUser();
         user.setEmailVerified(true);
-        when(emailVerificationService.verifyEmail("raw-token")).thenReturn(user);
+        when(emailVerificationService.verifyEmailWithCode("customer@example.com", "123456")).thenReturn(user);
 
-        service.verifyEmail("raw-token");
+        service.verifyEmailWithCode("customer@example.com", "123456");
 
         verify(notificationEventProducer).publishEmailVerified(1L, "Siddhartha", "customer@example.com");
     }
@@ -175,11 +177,13 @@ class AuthServiceImplTest {
     @Test
     void resendVerificationPublishesRequestEventWhenTokenIssued() {
         when(userRepository.findByEmail("customer@example.com")).thenReturn(Optional.of(savedUser()));
-        when(emailVerificationService.resendVerification(1L)).thenReturn("fresh-token");
+        when(emailVerificationService.resendVerification(1L))
+                .thenReturn("654321");
 
         service.resendVerification("customer@example.com");
 
-        verify(notificationEventProducer).publishVerificationRequested(1L, "Siddhartha", "customer@example.com", "fresh-token");
+        verify(notificationEventProducer).publishVerificationRequested(1L, "Siddhartha",
+                "customer@example.com", "654321");
     }
 
     @Test

@@ -84,6 +84,27 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Testcontainers: starts a REAL RabbitMQ broker for the end-to-end notification
+             pipeline integration test (NotificationRabbitMqIntegrationTest). @ServiceConnection
+             wires the container's broker into the Spring context automatically. The test is
+             skipped (not failed) when no Testcontainers-compatible Docker daemon is reachable
+             — see @Testcontainers(disabledWithoutDocker = true) in the test class. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>rabbitmq</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
