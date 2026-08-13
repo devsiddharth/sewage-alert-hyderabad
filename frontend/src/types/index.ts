@@ -74,6 +74,12 @@ export interface RegisterRequest {
   role?: Role;
 }
 
+/** Body for POST /api/v1/auth/verify-code — inline 6-digit code verification during registration. */
+export interface VerifyCodeRequest {
+  email: string;
+  code: string;
+}
+
 /** Field officer user (auth-service) — safe projection used by the assignment UI. */
 export interface FieldOfficer {
   id: number;

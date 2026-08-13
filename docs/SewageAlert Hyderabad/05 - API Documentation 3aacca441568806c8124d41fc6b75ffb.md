@@ -14,9 +14,19 @@
 
 | Method | Endpoint | Description | Access |
 | --- | --- | --- | --- |
-| POST | `/api/v1/auth/register` | Register a new user | Public |
+| POST | `/api/v1/auth/register` | Register a new user (account created unverified) | Public |
 | POST | `/api/v1/auth/login` | Login and receive JWT | Public |
+| POST | `/api/v1/auth/verify-code` | Verify email via the 6-digit code (inline during registration) | Public |
+| POST | `/api/v1/auth/resend-verification` | Re-send the verification email (fresh 6-digit code) | Public |
 | GET | `/api/v1/auth/profile` | Get logged-in user | Authenticated |
+
+### Verify email with the 6-digit code
+
+`POST /api/v1/auth/verify-code` — the inline verification step shown during registration.
+Body: `{ "email": "you@example.com", "code": "123456" }`. The code comes from the
+verification email (OTP-only — no link is sent). Responses are generic on failure to
+prevent account enumeration; max 5 wrong attempts per account, then a 60-second lockout
+(resend a fresh code).
 
 ---
 

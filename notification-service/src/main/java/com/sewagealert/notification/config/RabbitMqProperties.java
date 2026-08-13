@@ -31,8 +31,12 @@ public class RabbitMqProperties {
     /** Routing key used to bind the DLQ to the DLX. */
     private String dlqRoutingKey = "notification.dlq";
 
-    /** Topic wildcard binding: every {@code notification.*} event routes to the main queue. */
-    private String routingKeyPattern = "notification.*";
+    /** Topic wildcard binding: every {@code notification.#} event routes to the main queue.
+     *  The {@code #} hash matches zero or more words, so it catches both two-word keys
+     *  (e.g. {@code notification.created}) and three-word keys published by the Auth Service
+     *  ({@code notification.user.registered}, {@code notification.user.verified}) — a
+     *  single {@code *} star would only match exactly one word and silently drop them. */
+    private String routingKeyPattern = "notification.#";
 
     /** Dedicated exchange for re-published "delivery" events. Kept separate from the main
      *  exchange so delivery events can NEVER re-enter notification.queue (no wildcard binding). */

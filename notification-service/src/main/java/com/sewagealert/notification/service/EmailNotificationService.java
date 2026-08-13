@@ -7,8 +7,8 @@ import com.sewagealert.notification.dto.NotificationEvent;
 // email concerns out of the Auth/Complaint services and the frontend.
 public interface EmailNotificationService {
 
-    // sendVerificationEmail: Sends the "verify your email address" email using the
-    // verification token carried in the event metadata to build the verification link.
+    // sendVerificationEmail: Sends the "verify your email address" email containing the
+    // 6-digit verification code carried in the event metadata (OTP-only — no link).
     void sendVerificationEmail(NotificationEvent event);
 
     // sendWelcomeEmail: Sends the optional post-verification welcome email (only when a

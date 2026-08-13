@@ -18,15 +18,16 @@ import java.util.UUID;
 // event is logged and dropped, so registration/verification never fail because of the broker.
 // (Guaranteed delivery via an outbox pattern is a documented future improvement.)
 //
-// The raw verification token is intentionally included here — the Notification Service needs
-// it to construct the verification link. It is NOT logged anywhere.
+// The raw 6-digit verification code is intentionally included here — the Notification Service
+// needs it to render the OTP inside the verification email. It is NOT logged anywhere.
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class NotificationEventProducerImpl implements NotificationEventProducer {
 
-    // Routing keys — the wildcard binding (notification.*) on the consumer queue means new
-    // keys require no RabbitMQ changes. Keep in sync with the Notification Service contract.
+    // Routing keys — the consumer queue binding (notification.#) on the Notification Service
+    // matches every key under notification.*, so new keys require no RabbitMQ changes.
+    // Keep in sync with the Notification Service contract.
     private static final String RK_USER_REGISTERED = "notification.user.registered";
     private static final String RK_USER_VERIFIED = "notification.user.verified";
 
@@ -34,29 +35,29 @@ public class NotificationEventProducerImpl implements NotificationEventProducer 
     private final RabbitMqProperties properties;
 
     @Override
-    public void publishUserRegistered(Long userId, String name, String email, String verificationToken) {
-        publishAuthEvent("USER_REGISTERED", userId, name, email, verificationToken, RK_USER_REGISTERED);
+    public void publishUserRegistered(Long userId, String name, String email, String verificationCode) {
+        publishAuthEvent("USER_REGISTERED", userId, name, email, verificationCode, RK_USER_REGISTERED);
     }
 
     @Override
-    public void publishVerificationRequested(Long userId, String name, String email, String verificationToken) {
-        publishAuthEvent("EMAIL_VERIFICATION_REQUESTED", userId, name, email, verificationToken, RK_USER_REGISTERED);
+    public void publishVerificationRequested(Long userId, String name, String email, String verificationCode) {
+        publishAuthEvent("EMAIL_VERIFICATION_REQUESTED", userId, name, email, verificationCode, RK_USER_REGISTERED);
     }
 
     private void publishAuthEvent(String eventType, Long userId, String name, String email,
-                                  String verificationToken, String routingKey) {
+                                  String verificationCode, String routingKey) {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("name", name);
         metadata.put("email", email);
-        metadata.put("verificationToken", verificationToken);
+        metadata.put("verificationCode", verificationCode);
 
         NotificationEvent event = NotificationEvent.builder()
                 .eventId(UUID.randomUUID().toString())
                 .eventType(eventType)
                 .userId(userId)
                 .title("Verify your email address")
-                .message("Welcome to Sewage Alert Hyderabad! Please verify your email address "
-                        + "to activate your account — the link expires in 30 minutes.")
+                .message("Welcome to Sewage Alert Hyderabad! Enter the 6-digit code from the "
+                        + "email to activate your account — it expires in 30 minutes.")
                 .createdAt(LocalDateTime.now())
                 .metadata(metadata)
                 .build();

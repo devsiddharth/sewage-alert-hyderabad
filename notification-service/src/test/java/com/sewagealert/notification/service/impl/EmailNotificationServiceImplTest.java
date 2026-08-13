@@ -21,8 +21,9 @@ import static org.mockito.Mockito.*;
 
 /**
  * EmailNotificationServiceImplTest: Verifies the correct EmailJS template parameters are
- * passed (name / email / verification_link), that the link is built from FRONTEND_URL,
- * and that EmailJS failures never propagate (no real emails are sent — client is mocked).
+ * passed for the OTP-only verification flow (name / email / verification_code — NO
+ * verification link), that a missing code skips the send, and that EmailJS failures
+ * never propagate (no real emails are sent — client is mocked).
  */
 @ExtendWith(MockitoExtension.class)
 class EmailNotificationServiceImplTest {
@@ -47,11 +48,11 @@ class EmailNotificationServiceImplTest {
         service = new EmailNotificationServiceImpl(emailJsClient, emailJsProperties, appProperties);
     }
 
-    private NotificationEvent registeredEvent(String token) {
+    private NotificationEvent registeredEvent() {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("name", "Siddhartha");
         metadata.put("email", "customer@example.com");
-        metadata.put("verificationToken", token);
+        metadata.put("verificationCode", "123456");
         return NotificationEvent.builder()
                 .eventId("event-1")
                 .eventType("USER_REGISTERED")
@@ -61,8 +62,8 @@ class EmailNotificationServiceImplTest {
     }
 
     @Test
-    void verificationEmailPassesNameEmailAndVerificationLink() {
-        service.sendVerificationEmail(registeredEvent("secure-token"));
+    void verificationEmailPassesNameEmailAndOtpOnly() {
+        service.sendVerificationEmail(registeredEvent());
 
         ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
         verify(emailJsClient).send(eq("template_w4koj8i"), paramsCaptor.capture());
@@ -70,21 +71,10 @@ class EmailNotificationServiceImplTest {
         Map<String, Object> params = paramsCaptor.getValue();
         assertThat(params.get("name")).isEqualTo("Siddhartha");
         assertThat(params.get("email")).isEqualTo("customer@example.com");
-        // Link built from the configured FRONTEND_URL — never hardcoded
-        assertThat(params.get("verification_link"))
-                .isEqualTo("http://localhost:5173/verify-email?token=secure-token");
-    }
-
-    @Test
-    void verificationEmailUsesConfiguredFrontendUrl() {
-        appProperties.setFrontendUrl("https://sewagealert.example.com");
-
-        service.sendVerificationEmail(registeredEvent("tok"));
-
-        ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(emailJsClient).send(eq("template_w4koj8i"), paramsCaptor.capture());
-        assertThat(paramsCaptor.getValue().get("verification_link"))
-                .isEqualTo("https://sewagealert.example.com/verify-email?token=tok");
+        // OTP-only verification — the 6-digit code renders with {{verification_code}}
+        assertThat(params.get("verification_code")).isEqualTo("123456");
+        // No verification link is sent — the token-link mechanism is not part of this flow
+        assertThat(params).doesNotContainKey("verification_link");
     }
 
     @Test
@@ -92,7 +82,7 @@ class EmailNotificationServiceImplTest {
         doThrow(new RuntimeException("EmailJS provider outage"))
                 .when(emailJsClient).send(any(), any());
 
-        assertThatCode(() -> service.sendVerificationEmail(registeredEvent("secure-token")))
+        assertThatCode(() -> service.sendVerificationEmail(registeredEvent()))
                 .doesNotThrowAnyException();
     }
 
@@ -100,13 +90,13 @@ class EmailNotificationServiceImplTest {
     void verificationEmailSkippedWhenEmailJsNotConfigured() {
         emailJsProperties.setPrivateKey(null);
 
-        service.sendVerificationEmail(registeredEvent("secure-token"));
+        service.sendVerificationEmail(registeredEvent());
 
         verify(emailJsClient, never()).send(any(), any());
     }
 
     @Test
-    void verificationEmailSkippedWhenTokenMissingFromMetadata() {
+    void verificationEmailSkippedWhenCodeMissingFromMetadata() {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("name", "Siddhartha");
         metadata.put("email", "customer@example.com");
@@ -120,13 +110,13 @@ class EmailNotificationServiceImplTest {
     @Test
     void welcomeEmailSentOnlyWhenWelcomeTemplateConfigured() {
         // No welcome template configured → no send
-        service.sendWelcomeEmail(registeredEvent("unused"));
+        service.sendWelcomeEmail(registeredEvent());
         verify(emailJsClient, never()).send(any(), any());
 
         // Configured → send with name/email/login_url params
         emailJsProperties.setWelcomeTemplateId("template_welcome");
 
-        service.sendWelcomeEmail(registeredEvent("unused"));
+        service.sendWelcomeEmail(registeredEvent());
 
         ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
         verify(emailJsClient).send(eq("template_welcome"), paramsCaptor.capture());

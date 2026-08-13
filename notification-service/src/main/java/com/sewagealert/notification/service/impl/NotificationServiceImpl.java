@@ -44,10 +44,10 @@ public class NotificationServiceImpl implements NotificationService {
 
         NotificationType type = EventTypeResolver.resolve(event.getEventType());
 
-        // The raw verification token must never be persisted: it is only needed at send-time
-        // to build the verification link, so the stored copy drops it (the email service still
-        // receives the original event with the token).
-        NotificationEvent persistedEvent = stripVerificationToken(event);
+        // The raw verification code must never be persisted: it is only needed at send-time
+        // to render the OTP email, so the stored copy drops it (the email service still
+        // receives the original event with the code).
+        NotificationEvent persistedEvent = stripVerificationSecrets(event);
         Notification notification = NotificationMapper.toEntity(persistedEvent, type);
 
         notification = notificationRepository.save(notification);
@@ -86,14 +86,15 @@ public class NotificationServiceImpl implements NotificationService {
         // eventType validity is checked by EventTypeResolver
     }
 
-    // stripVerificationToken: Returns an event copy whose metadata no longer contains the
-    // single-use verification token — the token travels only from producer → consumer → EmailJS.
-    private NotificationEvent stripVerificationToken(NotificationEvent event) {
+    // stripVerificationSecrets: Returns an event copy whose metadata no longer contains the
+    // 6-digit verification code — it travels only from producer → consumer → EmailJS and
+    // must never be persisted.
+    private NotificationEvent stripVerificationSecrets(NotificationEvent event) {
         if (event.getMetadata() == null || event.getMetadata().isEmpty()) {
             return event;
         }
         Map<String, Object> metadata = new HashMap<>(event.getMetadata());
-        metadata.remove("verificationToken");
+        metadata.remove("verificationCode");
 
         return NotificationEvent.builder()
                 .eventId(event.getEventId())

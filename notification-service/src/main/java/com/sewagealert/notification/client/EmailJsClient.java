@@ -17,7 +17,7 @@ import java.util.Map;
 //
 //   POST https://api.emailjs.com/api/v1.0/email/send
 //   { service_id, template_id, user_id (public key), accessToken (private key),
-//     template_params: { name, email, verification_link, ... } }
+//     template_params: { name, email, verification_code, ... } }
 //
 // The private key is read from configuration (environment) and sent as `accessToken`.
 // It is never logged.

@@ -50,7 +50,7 @@ public class NotificationEvent implements Serializable {
 
     private LocalDateTime createdAt;
 
-    // metadata: Extensible JSON-safe bag (name, email, verificationToken for auth events)
+    // metadata: Extensible JSON-safe bag (name, email, verificationCode for auth events)
     @Builder.Default
     private Map<String, Object> metadata = new HashMap<>();
 }

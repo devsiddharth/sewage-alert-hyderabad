@@ -46,7 +46,7 @@ class NotificationServiceImplTest {
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("name", "Siddhartha");
         metadata.put("email", "customer@example.com");
-        metadata.put("verificationToken", "secure-token");
+        metadata.put("verificationCode", "123456");
         return NotificationEvent.builder()
                 .eventId("event-" + eventType)
                 .eventType(eventType)

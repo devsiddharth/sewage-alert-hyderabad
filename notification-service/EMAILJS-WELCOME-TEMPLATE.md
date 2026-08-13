@@ -139,6 +139,45 @@ event + `FRONTEND_URL`):
 ## Verification (end-to-end)
 
 1. Register a customer → account created unverified.
-2. Verify the email via the link → `GET /api/v1/auth/verify-email` succeeds.
+2. Verify the email — the customer types the 6-digit code from the email
+   (`POST /api/v1/auth/verify-code`) and the account is activated.
 3. The Notification Service consumes `EMAIL_VERIFIED` and sends the welcome email
    (only when `EMAILJS_WELCOME_TEMPLATE_ID` is set — otherwise it logs and skips).
+
+---
+
+## Verification email template (`template_w4koj8i`)
+
+Verification is **OTP-only**: the customer types the 6-digit code from the email
+into the registration page. The backend sends exactly these parameters — no
+verification link:
+
+```json
+{
+  "name": "<customer-name>",
+  "email": "<customer-email>",
+  "verification_code": "<6-digit-code>"
+}
+```
+
+| Variable            | Template placeholder   | Notes                                  |
+|---------------------|------------------------|----------------------------------------|
+| Customer name       | `{{name}}`             |                                        |
+| Customer email      | `{{email}}`            |                                        |
+| **6-digit code**    | `{{verification_code}}`| Shown on the registration page         |
+
+### Updating the template (2 minutes)
+
+1. Open https://dashboard.emailjs.com → **Email Templates** → edit `template_w4koj8i`.
+2. In the **Code / HTML** editor, add a prominent code block:
+
+```html
+<p style="...">Your 6-digit verification code is:</p>
+<h2 style="font-size: 34px; letter-spacing: 9px; font-weight: bold; color: #0d2b68;">{{verification_code}}</h2>
+<p style="...">It expires in 30 minutes.</p>
+```
+
+3. **Save** — no code changes required on the backend.
+
+> If `{{verification_code}}` is missing from the template, the email omits the code
+> block and the customer cannot verify — the template must render it.

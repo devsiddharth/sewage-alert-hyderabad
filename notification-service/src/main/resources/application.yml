@@ -4,7 +4,9 @@
 #   Exchange : notification.exchange (topic, durable)
 #   Queue    : notification.queue    (durable, x-dead-letter-exchange -> notification.dlx)
 #   DLQ      : notification.dlq      (permanently failed messages)
-#   Routing  : notification.* -> notification.queue  (covers all notification events)
+#   Routing  : notification.# -> notification.queue  (covers all notification events — the
+#              # hash matches multi-word keys like notification.user.registered; a single *
+#              would only match one word and silently drop them)
 
 server:
   port: 8085  # Runs on port 8085
@@ -57,7 +59,7 @@ app:
     dlq-exchange: notification.dlx
     dlq-queue: notification.dlq
     dlq-routing-key: notification.dlq
-    routing-key-pattern: notification.*
+    routing-key-pattern: notification.#
     delivery-exchange: notification.delivery.exchange
     delivery-routing-key: notification.delivered
 

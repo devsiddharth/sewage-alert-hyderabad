@@ -24,8 +24,8 @@ import java.util.UUID;
 @Slf4j
 public class NotificationEventProducerImpl implements NotificationEventProducer {
 
-    // Routing keys — the wildcard binding (notification.*) on the consumer queue means new
-    // keys require no RabbitMQ changes. Keep in sync with the Notification Service contract.
+    // Routing keys — the consumer queue binding (notification.#) on the Notification Service
+    // matches every key under notification.*, so new keys require no RabbitMQ changes. Keep in sync with the Notification Service contract.
     private static final String RK_CREATED = "notification.created";
     private static final String RK_ASSIGNED = "notification.assigned";
     private static final String RK_STATUS_UPDATED = "notification.status.updated";
