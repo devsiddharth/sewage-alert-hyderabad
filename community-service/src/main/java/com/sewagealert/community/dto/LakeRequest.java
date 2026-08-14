@@ -1,17 +1,31 @@
 package com.sewagealert.community.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
+@Schema(description = "Lake information create/update request")
 public class LakeRequest {
 
+    @Schema(description = "Lake name", example = "Hussain Sagar")
     @NotBlank(message = "Lake name is required")
     private String name;
 
+    @Schema(description = "Location", example = "Hyderabad")
     private String location;
+
+    @Schema(description = "Restoration status", example = "IN_PROGRESS")
     private String restorationStatus;
+
+    @Schema(description = "Water source", example = "Musi River")
     private String waterSource;
+
+    @Schema(description = "Id of the connected treatment plant", example = "3")
     private Long connectedStpId;
+
+    @Schema(description = "Environmental updates")
     private String environmentalUpdates;
+
+    @Schema(description = "Lake description")
     private String description;
 
     public String getName() { return name; }
