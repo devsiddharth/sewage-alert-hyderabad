@@ -1,18 +1,24 @@
 package com.sewagealert.community.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
+@Schema(description = "Educational article create/update request")
 public class ArticleRequest {
 
+    @Schema(description = "Article title", example = "How Sewage Treatment Plants Work")
     @NotBlank(message = "Title is required")
     private String title;
 
+    @Schema(description = "Article body content")
     @NotBlank(message = "Content is required")
     private String content;
 
+    @Schema(description = "Article category", example = "water-conservation")
     @NotBlank(message = "Category is required")
     private String category;
 
+    @Schema(description = "Author name", example = "Dr. Meera Nair")
     @NotBlank(message = "Author name is required")
     private String authorName;
 
