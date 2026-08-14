@@ -36,6 +36,14 @@ public class SecurityConfig {
                         "/api/v1/auth/verify-code",
                         "/api/v1/auth/resend-verification"
                 ).permitAll()
+                // Swagger/OpenAPI infrastructure — developers need the docs and Swagger UI
+                // without a JWT. Only the documentation endpoints are opened; every other
+                // API below stays behind authentication.
+                .requestMatchers(
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**"
+                ).permitAll()
                 // Internal service-to-service endpoints (role verification for other
                 // microservices) — no user JWT is involved in those calls. These follow
                 // the /api/v1/internal/ convention which the gateway does NOT route,
