@@ -146,7 +146,7 @@ notification.delivery.exchange (topic, durable — separate exchange, no queues 
 
 ### Prerequisites
 
-- Java 17, Maven
+- Java 25, Maven
 - MySQL (create the database first: `CREATE DATABASE sewagealert_notifications;`)
 - RabbitMQ (see Docker setup below)
 - Eureka Server running on `:8761`

@@ -50,7 +50,7 @@ Auth Service  User Service  Complaint Service  Community Service  Notification S
 
 ## Backend
 
-- Java 21
+- Java 25
 - Spring Boot
 - Spring Security
 - Spring Cloud Gateway
