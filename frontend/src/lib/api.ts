@@ -3,9 +3,16 @@ import type { ApiResponse } from "@/types";
 // ---------------------------------------------------------------------------
 // API client
 //
-// All traffic is routed through the Spring Cloud Gateway:
+// All traffic is routed through the Spring Cloud Gateway and requests stay
+// same-origin, so no CORS is involved in the browser:
 //   - dev  : same-origin, proxied by Vite -> http://localhost:8080
-//   - prod : set VITE_API_URL to the deployed gateway (e.g. https://api.example.com)
+//   - prod : same-origin, proxied by Vercel (frontend/vercel.json) ->
+//            http://16.113.76.178:8080/api/...
+//
+// API_BASE intentionally stays empty in production: the browser only ever calls
+// relative /api/... URLs on the Vercel domain. Do NOT set VITE_API_URL to the
+// EC2 gateway in the Vercel environment — that would force direct browser
+// requests to plain HTTP (mixed-content) and bypass the rewrite.
 //
 // Authenticated calls send both:
 //   Authorization: Bearer <jwt>          (validated by auth-service)
