@@ -38,13 +38,19 @@ Thumbs.db
 *.log
 logs/
 
-# Environment
+# Environment (keep .env.example as a committed template)
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 
 # Docker
 docker-compose.override.yml
+
+# Node / Frontend
+node_modules/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
 
 # Build
 build/
