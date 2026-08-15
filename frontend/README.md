@@ -26,11 +26,24 @@ so no CORS configuration is needed locally. Start the backend stack first
 
 ## Connecting to a deployed gateway
 
+**Vercel (production):** `vercel.json` rewrites `/api/:path*` to the EC2 Spring
+Cloud Gateway (`http://16.113.76.178:8080/api/:path*`), so the browser only ever
+talks to the Vercel domain over HTTPS — no mixed content, no CORS. Do **not** set
+`VITE_API_URL` in the Vercel environment; leave the API base empty so the
+frontend uses relative `/api/...` paths.
+
+```bash
+npm run build
+npm run preview      # serves the production build
+```
+
+**Self-hosted / other hosts:** if the build is served somewhere without a proxy,
+set the gateway URL at build time instead:
+
 ```bash
 cp .env.example .env
 # VITE_API_URL=http://<gateway-host>:8080
 npm run build
-npm run preview      # serves the production build
 ```
 
 ## Scripts
