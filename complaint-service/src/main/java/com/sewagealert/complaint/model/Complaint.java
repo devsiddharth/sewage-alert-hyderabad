@@ -45,6 +45,13 @@ public class Complaint {
     @Column(name = "resolution_remarks", columnDefinition = "TEXT")
     private String resolutionRemarks;
 
+    // resolutionProofImageUrl: Public object-storage URL of the mandatory resolution-proof
+    // photo uploaded by the admin before the complaint can be marked RESOLVED. Persisted as a
+    // URL only — image bytes are never stored in the database (same as complaint images).
+    // Null until the complaint is actually resolved with a proof photo.
+    @Column(name = "resolution_proof_image_url", length = 2048)
+    private String resolutionProofImageUrl;
+
     // images: One complaint can have multiple images — cascade ALL so deleting a complaint removes its images
     @OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ComplaintImage> images = new ArrayList<>();
@@ -115,6 +122,9 @@ public class Complaint {
 
     public String getResolutionRemarks() { return resolutionRemarks; }
     public void setResolutionRemarks(String resolutionRemarks) { this.resolutionRemarks = resolutionRemarks; }
+
+    public String getResolutionProofImageUrl() { return resolutionProofImageUrl; }
+    public void setResolutionProofImageUrl(String resolutionProofImageUrl) { this.resolutionProofImageUrl = resolutionProofImageUrl; }
 
     public List<ComplaintImage> getImages() { return images; }
     public void setImages(List<ComplaintImage> images) { this.images = images; }

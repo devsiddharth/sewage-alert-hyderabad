@@ -196,7 +196,7 @@ export function ReportIssue() {
           <p className="mt-1 text-sm text-muted">Takes less than a minute. Everything is saved the moment you submit.</p>
         </div>
         <span className="hidden rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-brand sm:block">
-          Step 2 of 3 · Details
+          Report details
         </span>
       </div>
 

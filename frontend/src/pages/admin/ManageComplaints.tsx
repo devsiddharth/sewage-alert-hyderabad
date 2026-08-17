@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowDown, ArrowUp, CheckCircle2, Eye, Filter, MapPin, Search, UserRoundCheck, UserRoundX } from "lucide-react";
+import { ArrowDown, ArrowUp, Camera, CheckCircle2, Eye, Filter, ImagePlus, MapPin, Search, UserRoundCheck, UserRoundX, X } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
@@ -14,9 +14,9 @@ import { useComplaints } from "@/hooks/useComplaints";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { useToast } from "@/lib/toast";
-import { assignComplaint, fetchFieldOfficers } from "@/services/assignment";
-import { complaintCode, formatDateTime, timeAgo } from "@/lib/utils";
-import type { Complaint, ComplaintPriority, ComplaintStatus, FieldOfficer } from "@/types";
+import { assignComplaint, fetchFieldOfficers, resolveComplaint } from "@/services/assignment";
+import { complaintCode, fileToCompressedFile, formatDateTime, timeAgo } from "@/lib/utils";
+import { STATUS_META, type Complaint, type ComplaintPriority, type ComplaintStatus, type FieldOfficer } from "@/types";
 
 const PAGE_SIZE = 8;
 const STATUSES: ComplaintStatus[] = ["PENDING", "IN_PROGRESS", "RESOLVED", "REJECTED"];
@@ -105,7 +105,16 @@ export function ManageComplaints() {
   const [statusVal, setStatusVal] = useState<ComplaintStatus>("IN_PROGRESS");
   const [priorityVal, setPriorityVal] = useState<ComplaintPriority | "">("");
   const [remarks, setRemarks] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofError, setProofError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const proofFileRef = useRef<HTMLInputElement>(null);
+
+  // Object-URL preview for the selected proof photo (revoked whenever it changes or unmounts).
+  const proofPreviewUrl = useMemo(() => (proofFile ? URL.createObjectURL(proofFile) : null), [proofFile]);
+  useEffect(() => () => {
+    if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
+  }, [proofPreviewUrl]);
 
   useEffect(() => {
     setPage(1);
@@ -150,43 +159,70 @@ export function ManageComplaints() {
     }
   };
 
-  const openEdit = (c: Complaint) => {
+  const openEdit = (c: Complaint, presetStatus?: ComplaintStatus) => {
     setEditing(c);
-    setStatusVal(c.status);
+    setStatusVal(presetStatus ?? c.status);
     setPriorityVal(c.priority ?? "");
     setRemarks("");
+    setProofFile(null);
+    setProofError(null);
+  };
+
+  // Quick "Resolve" now opens the status modal pre-set to RESOLVED, where the admin must
+  // attach the mandatory resolution-proof photo before the complaint can be resolved.
+  const openResolve = (c: Complaint) => {
+    openEdit(c, "RESOLVED");
+  };
+
+  const addProofImage = async (file: File | null) => {
+    setProofError(null);
+    if (!file) {
+      setProofFile(null);
+      return;
+    }
+    try {
+      // Reuse the same client-side compression as complaint photos — the backend
+      // accepts the compressed JPEG for the mandatory proof image too.
+      setProofFile(await fileToCompressedFile(file));
+    } catch {
+      setProofFile(null);
+      setProofError("That file couldn't be read as an image. Please choose a JPG, PNG or WEBP photo.");
+    }
   };
 
   const submitStatus = async () => {
     if (!editing) return;
+
+    // The resolution-proof photo is mandatory — the backend enforces this too, so a
+    // missing photo here is blocked up-front with a clear message.
+    if (statusVal === "RESOLVED" && !proofFile) {
+      setProofError("A resolution photo is required before this complaint can be marked as resolved.");
+      return;
+    }
+
     setSaving(true);
     try {
-      await api.patch(`/api/v1/complaints/${editing.id}/status`, {
-        status: statusVal,
-        priority: priorityVal || null,
-        remarks: remarks.trim() || null,
-      });
-      toast("success", "Complaint updated", `${complaintCode(editing.id)} → ${statusVal.replace("_", " ")}`);
+      if (statusVal === "RESOLVED") {
+        await resolveComplaint(editing.id, {
+          remarks: remarks.trim() || "Resolved by field team. Issue attended and fixed.",
+          priority: priorityVal || null,
+          proofImage: proofFile!,
+        });
+        toast("success", "Complaint resolved", complaintCode(editing.id));
+      } else {
+        await api.patch(`/api/v1/complaints/${editing.id}/status`, {
+          status: statusVal,
+          priority: priorityVal || null,
+          remarks: remarks.trim() || null,
+        });
+        toast("success", "Complaint updated", `${complaintCode(editing.id)} → ${STATUS_META[statusVal].label}`);
+      }
       setEditing(null);
       void reload();
     } catch (e) {
       toast("error", "Update failed", e instanceof Error ? e.message : undefined);
     } finally {
       setSaving(false);
-    }
-  };
-
-  const quickResolve = async (c: Complaint) => {
-    try {
-      await api.patch(`/api/v1/complaints/${c.id}/status`, {
-        status: "RESOLVED",
-        priority: c.priority,
-        remarks: "Resolved by field team. Issue attended and fixed.",
-      });
-      toast("success", "Complaint resolved", complaintCode(c.id));
-      void reload();
-    } catch {
-      toast("error", "Couldn't resolve complaint");
     }
   };
 
@@ -225,7 +261,7 @@ export function ManageComplaints() {
           <Select value={status} onChange={(e) => setStatus(e.target.value as typeof status)} className="lg:w-40" aria-label="Filter by status">
             <option value="ALL">All statuses</option>
             {STATUSES.map((s) => (
-              <option key={s} value={s}>{s.replace("_", " ")}</option>
+              <option key={s} value={s}>{STATUS_META[s].label}</option>
             ))}
           </Select>
           <Select value={priority} onChange={(e) => setPriority(e.target.value as typeof priority)} className="lg:w-40" aria-label="Filter by priority">
@@ -323,7 +359,7 @@ export function ManageComplaints() {
                           </>
                         )}
                         {c.status === "IN_PROGRESS" && (
-                          <Button size="sm" variant="secondary" icon={<CheckCircle2 className="h-3.5 w-3.5" />} onClick={() => void quickResolve(c)}>
+                          <Button size="sm" variant="secondary" icon={<CheckCircle2 className="h-3.5 w-3.5" />} onClick={() => openResolve(c)}>
                             Resolve
                           </Button>
                         )}
@@ -357,14 +393,24 @@ export function ManageComplaints() {
       <Modal
         open={editing !== null}
         onClose={() => setEditing(null)}
-        title={`Update ${editing ? complaintCode(editing.id) : ""}`}
-        description={`Assign priority and move the complaint forward. Acting as ${user?.name ?? "authority"}.`}
+        title={`${statusVal === "RESOLVED" ? "Resolve" : "Update"} ${editing ? complaintCode(editing.id) : ""}`}
+        description={
+          statusVal === "RESOLVED"
+            ? "A resolution photo is mandatory before this complaint can be marked as resolved."
+            : `Assign priority and move the complaint forward. Acting as ${user?.name ?? "authority"}.`
+        }
       >
         <div className="space-y-5">
           <Field label="Status" required>
-            <Select value={statusVal} onChange={(e) => setStatusVal(e.target.value as ComplaintStatus)}>
+            <Select
+              value={statusVal}
+              onChange={(e) => {
+                setStatusVal(e.target.value as ComplaintStatus);
+                setProofError(null);
+              }}
+            >
               {STATUSES.map((s) => (
-                <option key={s} value={s}>{s.replace("_", " ")}</option>
+                <option key={s} value={s}>{STATUS_META[s].label}</option>
               ))}
             </Select>
           </Field>
@@ -379,9 +425,76 @@ export function ManageComplaints() {
           <Field label="Remarks" hint="Internal note visible to the citizen on the timeline.">
             <Textarea rows={3} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="e.g. Assigned to Zone-5 field team." />
           </Field>
+
+          {statusVal === "RESOLVED" && (
+            <Field
+              label="Resolution photo"
+              required
+              hint="A clear photo of the fixed issue. JPG, PNG or WEBP."
+            >
+              {proofFile ? (
+                <div className="flex items-center gap-3 rounded-xl border border-line bg-canvas p-3">
+                  <img
+                    src={proofPreviewUrl ?? undefined}
+                    alt="Resolution proof preview"
+                    className="h-16 w-16 shrink-0 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">{proofFile.name}</p>
+                    <p className="text-xs text-muted">Ready to upload with the resolution.</p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    aria-label="Remove resolution photo"
+                    onClick={() => {
+                      setProofFile(null);
+                      setProofError(null);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => proofFileRef.current?.click()}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-canvas px-4 py-5 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-brand"
+                >
+                  <ImagePlus className="h-5 w-5" />
+                  Upload resolution photo
+                </button>
+              )}
+              <input
+                ref={proofFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  void addProofImage(e.target.files?.[0] ?? null);
+                  e.target.value = "";
+                }}
+              />
+              {proofError && (
+                <p className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-red-600">
+                  <Camera className="h-4 w-4 shrink-0" aria-hidden />
+                  {proofError}
+                </p>
+              )}
+            </Field>
+          )}
+
           <div className="flex justify-end gap-3">
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button onClick={() => void submitStatus()} loading={saving}>Save update</Button>
+            <Button
+              onClick={() => void submitStatus()}
+              loading={saving}
+              disabled={statusVal === "RESOLVED" && !proofFile}
+              title={statusVal === "RESOLVED" && !proofFile ? "A resolution photo is required" : undefined}
+            >
+              {statusVal === "RESOLVED" ? "Resolve complaint" : "Save update"}
+            </Button>
           </div>
         </div>
       </Modal>

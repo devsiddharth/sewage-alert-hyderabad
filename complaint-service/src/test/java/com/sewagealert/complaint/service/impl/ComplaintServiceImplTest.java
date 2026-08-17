@@ -6,9 +6,14 @@ import com.sewagealert.complaint.config.UploadProperties;
 import com.sewagealert.complaint.dto.ApiResponse;
 import com.sewagealert.complaint.dto.ComplaintRequest;
 import com.sewagealert.complaint.dto.ComplaintResponse;
+import com.sewagealert.complaint.dto.ComplaintStatusRequest;
 import com.sewagealert.complaint.dto.UserProfileResponse;
+import com.sewagealert.complaint.dto.UserRoleResponse;
+import com.sewagealert.complaint.exception.ForbiddenException;
+import com.sewagealert.complaint.model.ComplaintStatus;
 import com.sewagealert.complaint.exception.ImageStorageException;
 import com.sewagealert.complaint.exception.InvalidImageException;
+import com.sewagealert.complaint.exception.ResolutionProofRequiredException;
 import com.sewagealert.complaint.model.Complaint;
 import com.sewagealert.complaint.model.ComplaintImage;
 import com.sewagealert.complaint.producer.NotificationEventProducer;
@@ -46,6 +51,7 @@ class ComplaintServiceImplTest {
     private static final String URL1 = "https://res.cloudinary.com/demo/image/upload/v1/complaints/photo1.jpg";
     private static final String URL2 = "https://res.cloudinary.com/demo/image/upload/v1/complaints/photo2.png";
     private static final String URL3 = "https://res.cloudinary.com/demo/image/upload/v1/complaints/photo3.webp";
+    private static final String PROOF_URL = "https://res.cloudinary.com/demo/image/upload/v1/complaints/proof1.jpg";
 
     @Mock private ComplaintRepository complaintRepository;
     @Mock private UserServiceClient userServiceClient;
@@ -201,6 +207,156 @@ class ComplaintServiceImplTest {
         verify(imageStorageService).delete(URL1);
         verify(imageStorageService).delete(URL2);
         verify(complaintRepository).delete(complaint);
+    }
+
+    // --- resolution: mandatory proof -------------------------------------------
+
+    private void stubAdminRole() {
+        UserRoleResponse admin = new UserRoleResponse();
+        admin.setId(99L);
+        admin.setName("Admin");
+        admin.setEmail("admin@sewagealert.com");
+        admin.setRole("ADMIN");
+        when(authServiceClient.getUserRole(99L))
+                .thenReturn(ApiResponse.success("ok", admin));
+    }
+
+    private Complaint complaint(Long id, ComplaintStatus status) {
+        Complaint complaint = new Complaint();
+        complaint.setId(id);
+        complaint.setTitle("Sewage overflow");
+        complaint.setDescription("Leak near the school");
+        complaint.setLatitude(17.3850);
+        complaint.setLongitude(78.4867);
+        complaint.setStatus(status);
+        return complaint;
+    }
+
+    @Test
+    void resolveWithoutProofImageThrowsAndPersistsNothing() {
+        stubAdminRole();
+        Complaint complaint = complaint(7L, ComplaintStatus.IN_PROGRESS);
+        when(complaintRepository.findById(7L)).thenReturn(Optional.of(complaint));
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+
+        assertThrows(ResolutionProofRequiredException.class,
+                () -> service.resolveComplaint(7L, 99L, request, null));
+
+        verifyNoInteractions(imageStorageService);
+        verify(complaintRepository, never()).save(any());
+    }
+
+    @Test
+    void resolveWithEmptyProofImageThrowsAndPersistsNothing() {
+        stubAdminRole();
+        Complaint complaint = complaint(7L, ComplaintStatus.IN_PROGRESS);
+        when(complaintRepository.findById(7L)).thenReturn(Optional.of(complaint));
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+        MockMultipartFile empty = new MockMultipartFile("proofImage", "empty.jpg", "image/jpeg", new byte[0]);
+
+        assertThrows(ResolutionProofRequiredException.class,
+                () -> service.resolveComplaint(7L, 99L, request, empty));
+
+        verifyNoInteractions(imageStorageService);
+        verify(complaintRepository, never()).save(any());
+    }
+
+    @Test
+    void resolveWithInvalidProofTypeThrowsBeforeAnyUpload() {
+        stubAdminRole();
+        Complaint complaint = complaint(7L, ComplaintStatus.IN_PROGRESS);
+        when(complaintRepository.findById(7L)).thenReturn(Optional.of(complaint));
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+        MockMultipartFile text = new MockMultipartFile("proofImage", "notes.txt", "text/plain", new byte[]{1});
+
+        assertThrows(InvalidImageException.class,
+                () -> service.resolveComplaint(7L, 99L, request, text));
+
+        verifyNoInteractions(imageStorageService);
+        verify(complaintRepository, never()).save(any());
+    }
+
+    @Test
+    void resolveWithValidProofUploadsThenResolvesAndPersistsProofUrl() {
+        stubAdminRole();
+        Complaint complaint = complaint(7L, ComplaintStatus.IN_PROGRESS);
+        when(complaintRepository.findById(7L)).thenReturn(Optional.of(complaint));
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1, 2, 3});
+        when(imageStorageService.upload(proof)).thenReturn(PROOF_URL);
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+        request.setRemarks("Blockage cleared");
+
+        ComplaintResponse response = service.resolveComplaint(7L, 99L, request, proof);
+
+        verify(imageStorageService).upload(proof);
+        ArgumentCaptor<Complaint> captor = ArgumentCaptor.forClass(Complaint.class);
+        verify(complaintRepository).save(captor.capture());
+        assertEquals(ComplaintStatus.RESOLVED, captor.getValue().getStatus());
+        assertEquals(PROOF_URL, captor.getValue().getResolutionProofImageUrl());
+        assertEquals("Blockage cleared", captor.getValue().getResolutionRemarks());
+        assertEquals(1, captor.getValue().getHistory().size());
+        // The proof URL is the object-storage URL — never a Base64 payload.
+        assertFalse(PROOF_URL.startsWith("data:image"));
+        assertEquals(PROOF_URL, response.getResolutionProofImageUrl());
+        assertEquals(ComplaintStatus.RESOLVED.name(), response.getStatus());
+        // Resolution notification still published through the existing flow
+        verify(notificationEventProducer).publishStatusChanged(complaint, ComplaintStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void resolveWhenUploadFailsLeavesComplaintUnresolved() {
+        stubAdminRole();
+        Complaint complaint = complaint(7L, ComplaintStatus.IN_PROGRESS);
+        when(complaintRepository.findById(7L)).thenReturn(Optional.of(complaint));
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+        when(imageStorageService.upload(proof))
+                .thenThrow(new ImageStorageException("Cloudinary unavailable"));
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+
+        assertThrows(ImageStorageException.class,
+                () -> service.resolveComplaint(7L, 99L, request, proof));
+
+        // The complaint must NOT be marked resolved when the upload fails
+        verify(complaintRepository, never()).save(any());
+        assertEquals(ComplaintStatus.IN_PROGRESS, complaint.getStatus());
+        assertNull(complaint.getResolutionProofImageUrl());
+    }
+
+    @Test
+    void nonAdminCannotResolveComplaint() {
+        Complaint complaint = complaint(7L, ComplaintStatus.IN_PROGRESS);
+        when(complaintRepository.findById(7L)).thenReturn(Optional.of(complaint));
+        UserRoleResponse citizen = new UserRoleResponse();
+        citizen.setId(5L);
+        citizen.setRole("CITIZEN");
+        when(authServiceClient.getUserRole(5L)).thenReturn(ApiResponse.success("ok", citizen));
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+
+        assertThrows(ForbiddenException.class,
+                () -> service.resolveComplaint(7L, 5L, request, proof));
+
+        verifyNoInteractions(imageStorageService);
+        verify(complaintRepository, never()).save(any());
+    }
+
+    @Test
+    void updateStatusViaJsonCannotResolveWithoutProof() {
+        Complaint complaint = complaint(7L, ComplaintStatus.IN_PROGRESS);
+        when(complaintRepository.findById(7L)).thenReturn(Optional.of(complaint));
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+
+        assertThrows(ResolutionProofRequiredException.class,
+                () -> service.updateStatus(7L, 99L, request));
+
+        verify(complaintRepository, never()).save(any());
     }
 
     @Test

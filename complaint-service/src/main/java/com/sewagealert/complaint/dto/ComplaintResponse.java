@@ -18,6 +18,7 @@ public class ComplaintResponse {
     private Long createdBy;
     private Long assignedTo;
     private String resolutionRemarks;
+    private String resolutionProofImageUrl;
     private List<String> imageUrls;
     private List<HistoryEntry> history;
     private LocalDateTime createdAt;
@@ -38,6 +39,7 @@ public class ComplaintResponse {
         response.setCreatedBy(complaint.getCreatedBy());
         response.setAssignedTo(complaint.getAssignedTo());
         response.setResolutionRemarks(complaint.getResolutionRemarks());
+        response.setResolutionProofImageUrl(complaint.getResolutionProofImageUrl());
 
         // Maps the list of ComplaintImage entities to a simple list of URL strings
         response.setImageUrls(
@@ -108,6 +110,9 @@ public class ComplaintResponse {
 
     public String getResolutionRemarks() { return resolutionRemarks; }
     public void setResolutionRemarks(String resolutionRemarks) { this.resolutionRemarks = resolutionRemarks; }
+
+    public String getResolutionProofImageUrl() { return resolutionProofImageUrl; }
+    public void setResolutionProofImageUrl(String resolutionProofImageUrl) { this.resolutionProofImageUrl = resolutionProofImageUrl; }
 
     public List<String> getImageUrls() { return imageUrls; }
     public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }

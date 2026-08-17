@@ -77,7 +77,15 @@
 | status | ENUM |
 | priority | ENUM |
 | created_by | FK(User) |
+| assigned_to | FK(User) |
+| resolution_remarks | TEXT |
+| resolution_proof_image_url | VARCHAR |
 | created_at | TIMESTAMP |
+| updated_at | TIMESTAMP |
+
+> `resolution_proof_image_url` stores the object-storage URL of the mandatory resolution-proof
+> photo (v1.1.0) — set only when a complaint is marked RESOLVED. Image bytes are never stored
+> in the database; only URLs are persisted (same as complaint images via Cloudinary).
 
 ---
 
