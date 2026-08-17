@@ -86,6 +86,12 @@ src/
   compressed client-side and sent as **binary files** via `multipart/form-data`;
   the backend uploads them to Cloudinary object storage and persists only the
   returned URLs (no Base64 payloads in the database).
+- **Resolution proof (v1.1.0):** marking a complaint `RESOLVED` requires a
+  resolution-proof photo. The admin/field-officer UIs send it as a `proofImage`
+  file part to `POST /api/v1/complaints/admin/{id}/resolve` or
+  `POST /api/v1/complaints/field-officer/{id}/resolve`; the backend rejects
+  resolution without a valid photo, uploads it first, and returns the stored URL
+  in `data.resolutionProofImageUrl` (shown to the citizen on the detail page).
 - Notifications are served by the **Notification Service** through
   `GET /api/v1/notifications` (read/unread state is server-side). Settings
   (categories/departments) persist in `localStorage` until configuration

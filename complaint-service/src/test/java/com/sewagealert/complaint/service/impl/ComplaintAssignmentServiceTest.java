@@ -11,6 +11,8 @@ import com.sewagealert.complaint.exception.ComplaintNotFoundException;
 import com.sewagealert.complaint.exception.FieldOfficerNotFoundException;
 import com.sewagealert.complaint.exception.ForbiddenException;
 import com.sewagealert.complaint.exception.InvalidAssignmentException;
+import com.sewagealert.complaint.exception.InvalidImageException;
+import com.sewagealert.complaint.exception.ResolutionProofRequiredException;
 import com.sewagealert.complaint.model.Complaint;
 import com.sewagealert.complaint.model.ComplaintStatus;
 import com.sewagealert.complaint.producer.NotificationEventProducer;
@@ -24,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -257,6 +260,94 @@ class ComplaintAssignmentServiceTest {
         request.setStatus(ComplaintStatus.IN_PROGRESS);
 
         assertThrows(ForbiddenException.class, () -> service.updateAssignedComplaintStatus(42L, CITIZEN_ID, request));
+    }
+
+    // --- Field officer: resolution with mandatory proof -----------------------------
+
+    private static final String PROOF_URL = "https://res.cloudinary.com/demo/image/upload/v1/complaints/proof-officer.jpg";
+
+    private ComplaintStatusRequest resolvedRequest() {
+        ComplaintStatusRequest request = new ComplaintStatusRequest();
+        request.setStatus(ComplaintStatus.RESOLVED);
+        request.setRemarks("Issue attended and fixed");
+        return request;
+    }
+
+    @Test
+    void fieldOfficerCanResolveTheirAssignedComplaintWithProof() {
+        Complaint complaint = complaint(42L, ComplaintStatus.IN_PROGRESS, OFFICER_ID);
+        when(complaintRepository.findById(42L)).thenReturn(Optional.of(complaint));
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+        when(imageStorageService.upload(proof)).thenReturn(PROOF_URL);
+
+        ComplaintResponse response = service.resolveAssignedComplaint(42L, OFFICER_ID, resolvedRequest(), proof);
+
+        verify(imageStorageService).upload(proof);
+        ArgumentCaptor<Complaint> captor = ArgumentCaptor.forClass(Complaint.class);
+        verify(complaintRepository).save(captor.capture());
+        assertEquals(ComplaintStatus.RESOLVED, captor.getValue().getStatus());
+        assertEquals(PROOF_URL, captor.getValue().getResolutionProofImageUrl());
+        assertEquals(ComplaintStatus.RESOLVED.name(), response.getStatus());
+        verify(notificationEventProducer).publishStatusChanged(complaint, ComplaintStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void fieldOfficerCannotResolveWithoutProof() {
+        Complaint complaint = complaint(42L, ComplaintStatus.IN_PROGRESS, OFFICER_ID);
+        when(complaintRepository.findById(42L)).thenReturn(Optional.of(complaint));
+
+        assertThrows(ResolutionProofRequiredException.class,
+                () -> service.resolveAssignedComplaint(42L, OFFICER_ID, resolvedRequest(), null));
+
+        verifyNoInteractions(imageStorageService);
+        verify(complaintRepository, never()).save(any());
+    }
+
+    @Test
+    void fieldOfficerCannotResolveWithInvalidProofType() {
+        Complaint complaint = complaint(42L, ComplaintStatus.IN_PROGRESS, OFFICER_ID);
+        when(complaintRepository.findById(42L)).thenReturn(Optional.of(complaint));
+        MockMultipartFile text = new MockMultipartFile("proofImage", "notes.txt", "text/plain", new byte[]{1});
+
+        assertThrows(InvalidImageException.class,
+                () -> service.resolveAssignedComplaint(42L, OFFICER_ID, resolvedRequest(), text));
+
+        verifyNoInteractions(imageStorageService);
+        verify(complaintRepository, never()).save(any());
+    }
+
+    @Test
+    void fieldOfficerCannotResolveAnotherOfficersComplaint() {
+        Complaint complaint = complaint(42L, ComplaintStatus.IN_PROGRESS, OTHER_OFFICER_ID);
+        when(complaintRepository.findById(42L)).thenReturn(Optional.of(complaint));
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+
+        assertThrows(ForbiddenException.class,
+                () -> service.resolveAssignedComplaint(42L, OFFICER_ID, resolvedRequest(), proof));
+
+        verifyNoInteractions(imageStorageService);
+        verify(complaintRepository, never()).save(any());
+    }
+
+    @Test
+    void citizenCannotResolveAssignedComplaint() {
+        Complaint complaint = complaint(42L, ComplaintStatus.IN_PROGRESS, OFFICER_ID);
+        when(complaintRepository.findById(42L)).thenReturn(Optional.of(complaint));
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+
+        assertThrows(ForbiddenException.class,
+                () -> service.resolveAssignedComplaint(42L, CITIZEN_ID, resolvedRequest(), proof));
+    }
+
+    @Test
+    void officerCannotResolveViaJsonStatusPatch() {
+        Complaint complaint = complaint(42L, ComplaintStatus.IN_PROGRESS, OFFICER_ID);
+        when(complaintRepository.findById(42L)).thenReturn(Optional.of(complaint));
+
+        assertThrows(ResolutionProofRequiredException.class,
+                () -> service.updateAssignedComplaintStatus(42L, OFFICER_ID, resolvedRequest()));
+
+        verify(complaintRepository, never()).save(any());
     }
 
     // --- Regression: existing admin status update still works ----------------------

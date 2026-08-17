@@ -13,6 +13,7 @@ import com.sewagealert.complaint.exception.FieldOfficerNotFoundException;
 import com.sewagealert.complaint.exception.ForbiddenException;
 import com.sewagealert.complaint.exception.InvalidAssignmentException;
 import com.sewagealert.complaint.exception.InvalidImageException;
+import com.sewagealert.complaint.exception.ResolutionProofRequiredException;
 import com.sewagealert.complaint.exception.UserProfileNotFoundException;
 import com.sewagealert.complaint.exception.UserServiceUnavailableException;
 import com.sewagealert.complaint.model.*;
@@ -122,7 +123,12 @@ public class ComplaintServiceImpl implements ComplaintService {
     // validateImage: Rejects empty files, unsupported content types, and files over the
     // configured maximum size. Content type is checked (not just the file extension).
     private void validateImage(MultipartFile file, int index) {
-        String label = "Image " + (index + 1);
+        validateImage(file, "Image " + (index + 1));
+    }
+
+    // validateImage: Label-aware variant so the resolution proof reports a clear, user-facing
+    // label ("Resolution photo") instead of a generic "Image N".
+    private void validateImage(MultipartFile file, String label) {
         if (file == null || file.isEmpty()) {
             throw new InvalidImageException(label + " is empty. Please choose a valid image file.");
         }
@@ -193,11 +199,102 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Transactional
     @Override
-    // updateStatus: Updates the complaint status, priority, and adds a history entry — only callable by authority/admin
+    // updateStatus: Updates the complaint status, priority, and adds a history entry — only callable by authority/admin.
+    // RESOLVED is deliberately rejected on this JSON path: resolution requires the mandatory proof photo, which
+    // can only be uploaded via resolveComplaint. This keeps the backend-proof rule impossible to bypass.
     public ComplaintResponse updateStatus(Long complaintId, Long updatedBy, ComplaintStatusRequest request) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
         return applyStatusChange(complaint, updatedBy, request);
+    }
+
+    @Transactional
+    @Override
+    // resolveComplaint: (Admin-only) Resolves a complaint with a MANDATORY proof photo. The photo is
+    // validated and uploaded to object storage FIRST — only after a successful upload is the complaint
+    // marked RESOLVED, so an upload failure can never resolve a complaint. The returned proof URL is
+    // stored on the complaint row itself (never shared across complaints).
+    public ComplaintResponse resolveComplaint(Long complaintId, Long resolvedBy, ComplaintStatusRequest request,
+                                              MultipartFile proofImage) {
+        // 1. The caller must be an administrator
+        verifyRole(resolvedBy, "ADMIN", "Only administrators can resolve complaints");
+
+        // 2. The complaint must exist
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
+
+        return applyResolution(complaint, resolvedBy, request, proofImage);
+    }
+
+    @Transactional
+    @Override
+    // resolveAssignedComplaint: (Field-officer-only) Resolves a complaint ASSIGNED to the caller with the
+    // same mandatory proof-photo rule. Ownership is enforced here, never trusted from the frontend.
+    public ComplaintResponse resolveAssignedComplaint(Long complaintId, Long officerUserId,
+                                                      ComplaintStatusRequest request, MultipartFile proofImage) {
+        verifyRole(officerUserId, "FIELD_OFFICER", "Only field officers can resolve their assigned complaints");
+
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ComplaintNotFoundException("Complaint not found with id: " + complaintId));
+
+        // Unassigned complaints and complaints assigned to another officer are off-limits
+        if (!officerUserId.equals(complaint.getAssignedTo())) {
+            throw new ForbiddenException("You can only resolve complaints assigned to you");
+        }
+
+        return applyResolution(complaint, officerUserId, request, proofImage);
+    }
+
+    // applyResolution: Shared resolution flow used by both the admin and field-officer paths.
+    //  1. The proof photo is mandatory — empty/missing uploads are rejected up-front.
+    //  2. The photo is validated (content type, size) and uploaded to object storage FIRST.
+    //  3. Only after the upload succeeds is the complaint persisted as RESOLVED, with the proof
+    //     URL stored on this complaint's row and a history entry for the audit trail.
+    // If the upload throws, nothing is persisted and the complaint keeps its previous status.
+    private ComplaintResponse applyResolution(Complaint complaint, Long resolvedBy,
+                                              ComplaintStatusRequest request, MultipartFile proofImage) {
+        // 1. Mandatory proof image — a missing/empty upload must never resolve a complaint.
+        if (proofImage == null || proofImage.isEmpty()) {
+            throw new ResolutionProofRequiredException(
+                    "A resolution photo is required before this complaint can be marked as resolved.");
+        }
+
+        // 2. Validate the file (content type + size) with the same rules as complaint images.
+        validateImage(proofImage, "Resolution photo");
+
+        // 3. Upload to object storage first — a failed upload aborts the whole resolution.
+        String proofUrl = imageStorageService.upload(proofImage);
+
+        // 4. If the DB write later rolls back, remove the just-uploaded proof (no orphans).
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) {
+                        deleteUploaded(List.of(proofUrl));
+                    }
+                }
+            });
+        }
+
+        // 5. Persist the resolution only after the proof is safely stored.
+        ComplaintStatus previousStatus = complaint.getStatus();
+        complaint.setStatus(ComplaintStatus.RESOLVED);
+        if (request.getPriority() != null) {
+            complaint.setPriority(request.getPriority());
+        }
+        complaint.setResolutionRemarks(request.getRemarks());
+        complaint.setResolutionProofImageUrl(proofUrl);
+
+        complaint.addHistory(new ComplaintHistory(ComplaintStatus.RESOLVED, request.getRemarks(), resolvedBy));
+
+        complaint = complaintRepository.save(complaint);
+        log.info("Complaint {} resolved with proof by user: {}", complaint.getId(), resolvedBy);
+
+        // Event-driven notification: publish the resolution event to RabbitMQ (fire-and-forget)
+        notificationEventProducer.publishStatusChanged(complaint, previousStatus);
+
+        return ComplaintResponse.fromEntity(complaint);
     }
 
     @Transactional
@@ -271,15 +368,23 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     // applyStatusChange: Shared status mutation used by both the admin and field-officer paths.
+    // RESOLVED is rejected here: a complaint can only be resolved through applyResolution, which
+    // enforces the mandatory proof photo at the backend level.
     private ComplaintResponse applyStatusChange(Complaint complaint, Long updatedBy, ComplaintStatusRequest request) {
+        if (request.getStatus() == ComplaintStatus.RESOLVED) {
+            throw new ResolutionProofRequiredException(
+                    "A resolution photo is required before this complaint can be marked as resolved. "
+                            + "Please use the resolve action and upload a proof photo.");
+        }
+
         ComplaintStatus previousStatus = complaint.getStatus();
         complaint.setStatus(request.getStatus());
         if (request.getPriority() != null) {
             complaint.setPriority(request.getPriority());
         }
 
-        // If resolving, store resolution remarks
-        if (request.getStatus() == ComplaintStatus.RESOLVED || request.getStatus() == ComplaintStatus.REJECTED) {
+        // If rejecting, store the rejection remarks
+        if (request.getStatus() == ComplaintStatus.REJECTED) {
             complaint.setResolutionRemarks(request.getRemarks());
         }
 
@@ -333,6 +438,16 @@ public class ComplaintServiceImpl implements ComplaintService {
                 imageStorageService.delete(image.getImageUrl());
             } catch (RuntimeException ex) {
                 log.warn("Failed to delete complaint image from storage: {}", image.getImageUrl(), ex);
+            }
+        }
+
+        // Also remove the resolution-proof photo if one was uploaded (best-effort).
+        if (complaint.getResolutionProofImageUrl() != null) {
+            try {
+                imageStorageService.delete(complaint.getResolutionProofImageUrl());
+            } catch (RuntimeException ex) {
+                log.warn("Failed to delete resolution-proof image from storage: {}",
+                        complaint.getResolutionProofImageUrl(), ex);
             }
         }
 

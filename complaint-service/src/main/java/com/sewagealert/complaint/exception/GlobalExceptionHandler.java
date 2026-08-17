@@ -82,6 +82,13 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), null));
     }
 
+    @ExceptionHandler(ResolutionProofRequiredException.class)
+    public ResponseEntity<ApiResponse<String>> handleResolutionProofRequired(ResolutionProofRequiredException ex) {
+        return ResponseEntity
+                .status(BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), null));
+    }
+
     @ExceptionHandler(ImageStorageException.class)
     public ResponseEntity<ApiResponse<String>> handleImageStorage(ImageStorageException ex) {
         return ResponseEntity
