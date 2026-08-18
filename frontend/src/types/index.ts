@@ -125,6 +125,8 @@ export interface Complaint {
   createdBy: number;
   assignedTo: number | null;
   resolutionRemarks: string | null;
+  /** Object-storage URL of the mandatory resolution-proof photo (set when RESOLVED). */
+  resolutionProofImageUrl: string | null;
   imageUrls: string[];
   history: ComplaintHistoryEntry[];
   createdAt: string;

@@ -5,6 +5,7 @@ import com.sewagealert.complaint.dto.ComplaintResponse;
 import com.sewagealert.complaint.dto.ComplaintStatusRequest;
 import com.sewagealert.complaint.exception.ForbiddenException;
 import com.sewagealert.complaint.exception.GlobalExceptionHandler;
+import com.sewagealert.complaint.exception.ResolutionProofRequiredException;
 import com.sewagealert.complaint.model.ComplaintStatus;
 import com.sewagealert.complaint.service.ComplaintService;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -24,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -101,7 +104,88 @@ class ComplaintAssignmentControllerTest {
                 .andExpect(jsonPath("$.message").value("Only administrators can assign complaints"));
     }
 
+    // --- Admin resolution ---------------------------------------------------------
+
+    @Test
+    void adminCanResolveComplaintWithProofImage() throws Exception {
+        ComplaintResponse response = new ComplaintResponse();
+        response.setId(42L);
+        response.setStatus(ComplaintStatus.RESOLVED.name());
+        response.setResolutionProofImageUrl("https://res.cloudinary.com/demo/image/upload/v1/complaints/proof1.jpg");
+        when(complaintService.resolveComplaint(eq(42L), eq(1L), any(ComplaintStatusRequest.class), any()))
+                .thenReturn(response);
+
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        adminMvc.perform(multipart("/api/v1/complaints/admin/42/resolve")
+                        .file(proof)
+                        .param("remarks", "Blockage cleared")
+                        .header("X-Auth-User-Id", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("RESOLVED"))
+                .andExpect(jsonPath("$.data.resolutionProofImageUrl").value(
+                        "https://res.cloudinary.com/demo/image/upload/v1/complaints/proof1.jpg"));
+    }
+
+    @Test
+    void resolveWithoutProofImageReturns400() throws Exception {
+        when(complaintService.resolveComplaint(eq(42L), eq(1L), any(ComplaintStatusRequest.class), any()))
+                .thenThrow(new ResolutionProofRequiredException(
+                        "A resolution photo is required before this complaint can be marked as resolved."));
+
+        adminMvc.perform(multipart("/api/v1/complaints/admin/42/resolve")
+                        .header("X-Auth-User-Id", "1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(
+                        "A resolution photo is required before this complaint can be marked as resolved."));
+    }
+
+    @Test
+    void nonAdminResolveReturns403() throws Exception {
+        when(complaintService.resolveComplaint(eq(42L), eq(99L), any(ComplaintStatusRequest.class), any()))
+                .thenThrow(new ForbiddenException("Only administrators can resolve complaints"));
+
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+
+        adminMvc.perform(multipart("/api/v1/complaints/admin/42/resolve")
+                        .file(proof)
+                        .header("X-Auth-User-Id", "99"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Only administrators can resolve complaints"));
+    }
+
     // --- Field officer ------------------------------------------------------------
+
+    @Test
+    void officerCanResolveAssignedComplaintWithProof() throws Exception {
+        ComplaintResponse response = new ComplaintResponse();
+        response.setId(42L);
+        response.setStatus(ComplaintStatus.RESOLVED.name());
+        when(complaintService.resolveAssignedComplaint(eq(42L), eq(10L), any(ComplaintStatusRequest.class), any()))
+                .thenReturn(response);
+
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+
+        officerMvc.perform(multipart("/api/v1/complaints/field-officer/42/resolve")
+                        .file(proof)
+                        .header("X-Auth-User-Id", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("RESOLVED"));
+    }
+
+    @Test
+    void officerCannotResolveAnotherOfficersComplaint() throws Exception {
+        when(complaintService.resolveAssignedComplaint(eq(42L), eq(11L), any(ComplaintStatusRequest.class), any()))
+                .thenThrow(new ForbiddenException("You can only resolve complaints assigned to you"));
+
+        MockMultipartFile proof = new MockMultipartFile("proofImage", "proof.jpg", "image/jpeg", new byte[]{1});
+
+        officerMvc.perform(multipart("/api/v1/complaints/field-officer/42/resolve")
+                        .file(proof)
+                        .header("X-Auth-User-Id", "11"))
+                .andExpect(status().isForbidden());
+    }
 
     @Test
     void officerCanFetchAssignedComplaints() throws Exception {

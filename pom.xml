@@ -30,7 +30,7 @@
     </modules>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>25</java.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
         <jjwt.version>0.12.6</jjwt.version>
     </properties>
@@ -49,10 +49,34 @@
 
     <build>
         <plugins>
+
+            <!-- Spring Boot plugin inherited by child modules -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- Centralized Java compiler + Lombok annotation processing -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.0</version>
+                <configuration>
+                    <release>${java.version}</release>
+                    <!-- JDK 23+ disables classpath annotation processing by default; lombok is
+                         declared via annotationProcessorPaths, so explicitly opt back in. -->
+                    <proc>full</proc>
+
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.46</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 

@@ -1,0 +1,263 @@
+# =============================================================================
+# Sewage Alert Hyderabad — full backend stack
+#
+# Wires all 7 microservices plus MySQL and RabbitMQ onto one internal network.
+# Services reach each other by container/service name — the API gateway routes
+# to lb://AUTH-SERVICE etc. resolved through Eureka.
+#
+# Quick start (from the repository root):
+#   docker compose up -d --build
+#
+#   Eureka dashboard   http://localhost:8761
+#   API gateway        http://localhost:8080
+#   RabbitMQ console   http://localhost:15672   (guest / guest)
+#   MySQL              localhost:3307            (root / NewRoot@123 — override in .env)
+#
+# Why the environment variables below exist:
+#   * Every service's application.yml hardcodes http://localhost:8761 for
+#     Eureka and localhost:3306 for MySQL — overridden here so containers
+#     discover each other over the internal network.
+#   * prefer-ip-address makes clients register their container IP instead of
+#     the random container hostname, so peers can actually reach them.
+#   * Each service gets its own database (sewagealert_auth, _users, ...) —
+#     created on first boot by docker/mysql/init/01-create-databases.sql.
+#
+# Optional API keys (empty by default — read from your shell/.env when set):
+#   CLOUDINARY_CLOUD_NAME / _API_KEY / _API_SECRET  (complaint-service images)
+#   GNEWS_API_KEY, GOOGLE_PLACES_API_KEY            (community-service)
+#   EMAILJS_SERVICE_ID / _TEMPLATE_ID / _PUBLIC_KEY / _PRIVATE_KEY
+#   EMAILJS_WELCOME_TEMPLATE_ID                     (notification-service)
+# =============================================================================
+
+name: sewage-alert-hyderabad
+
+services:
+  # ── Infrastructure ────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.4
+    container_name: sewagealert-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-NewRoot@123}
+    ports:
+      # Host 3307 → container 3306 (3306 is often taken by a local MySQL).
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks: [backend]
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: sewagealert-rabbitmq
+    hostname: sewagealert-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"    # AMQP protocol (used by Spring AMQP)
+      - "15672:15672"  # Management UI / HTTP API
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks: [backend]
+    restart: unless-stopped
+
+  # ── Service discovery ─────────────────────────────────────────────────────
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    image: sewagealert/eureka-server:latest
+    container_name: sewagealert-eureka-server
+    ports:
+      - "8761:8761"
+    networks: [backend]
+    restart: unless-stopped
+
+  # ── API gateway (entry point for all frontend traffic) ───────────────────
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    image: sewagealert/api-gateway:latest
+    container_name: sewagealert-api-gateway
+    depends_on:
+      eureka-server:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    ports:
+      - "8080:8080"
+    networks: [backend]
+    restart: unless-stopped
+
+  # ── Auth service (port 8081, DB: sewagealert_auth, publishes to RabbitMQ) ─
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    image: sewagealert/auth-service:latest
+    container_name: sewagealert-auth-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/sewagealert_auth?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-NewRoot@123}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      VERIFICATION_TOKEN_TTL_MINUTES: ${VERIFICATION_TOKEN_TTL_MINUTES:-30}
+    ports:
+      - "8081:8081"
+    networks: [backend]
+    restart: unless-stopped
+
+  # ── User service (port 8082, DB: sewagealert_users) ──────────────────────
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    image: sewagealert/user-service:latest
+    container_name: sewagealert-user-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/sewagealert_users?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-NewRoot@123}
+    ports:
+      - "8082:8082"
+    networks: [backend]
+    restart: unless-stopped
+
+  # ── Complaint service (port 8083, DB: sewagealert_complaints, RabbitMQ) ───
+  complaint-service:
+    build:
+      context: .
+      dockerfile: complaint-service/Dockerfile
+    image: sewagealert/complaint-service:latest
+    container_name: sewagealert-complaint-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/sewagealert_complaints?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-NewRoot@123}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+    ports:
+      - "8083:8083"
+    networks: [backend]
+    restart: unless-stopped
+
+  # ── Community service (port 8084, DB: sewagealert_community) ──────────────
+  community-service:
+    build:
+      context: .
+      dockerfile: community-service/Dockerfile
+    image: sewagealert/community-service:latest
+    container_name: sewagealert-community-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/sewagealert_community?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-NewRoot@123}
+      GNEWS_API_KEY: ${GNEWS_API_KEY:-}
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+    ports:
+      - "8084:8084"
+    networks: [backend]
+    restart: unless-stopped
+
+  # ── Notification service (port 8085, DB: sewagealert_notifications, RabbitMQ) ─
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    image: sewagealert/notification-service:latest
+    container_name: sewagealert-notification-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/sewagealert_notifications?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-NewRoot@123}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      EMAILJS_SERVICE_ID: ${EMAILJS_SERVICE_ID:-}
+      EMAILJS_TEMPLATE_ID: ${EMAILJS_TEMPLATE_ID:-}
+      EMAILJS_PUBLIC_KEY: ${EMAILJS_PUBLIC_KEY:-}
+      EMAILJS_PRIVATE_KEY: ${EMAILJS_PRIVATE_KEY:-}
+      EMAILJS_WELCOME_TEMPLATE_ID: ${EMAILJS_WELCOME_TEMPLATE_ID:-}
+    ports:
+      - "8085:8085"
+    networks: [backend]
+    restart: unless-stopped
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  rabbitmq-data:

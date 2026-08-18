@@ -1,0 +1,28 @@
+# Keep the build context small and reproducible.
+
+# VCS and IDE
+.git
+.idea
+.vscode
+*.iml
+
+# Maven build output
+**/target
+*.jar
+*.war
+
+# Node frontend (not part of the backend image build)
+frontend/node_modules
+frontend/dist
+
+# Environment / secrets
+.env
+.env.local
+.env.production
+
+# Documentation
+docs
+
+# Local logs
+*.log
+logs

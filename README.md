@@ -50,7 +50,7 @@ Auth Service  User Service  Complaint Service  Community Service  Notification S
 
 ## Backend
 
-- Java 21
+- Java 25
 - Spring Boot
 - Spring Security
 - Spring Cloud Gateway
@@ -252,10 +252,11 @@ API integration notes.
 
 # ☁️ Cloudinary (Complaint Service)
 
-Complaint images are uploaded to **Cloudinary** object storage; only the returned
-URLs are stored in MySQL (no Base64 image payloads in the database). The complaint
-service reads these variables via `application.yml` — **set them before starting
-`complaint-service`**, otherwise image uploads fail at runtime:
+Complaint images **and the mandatory resolution-proof photos** (v1.1.0) are uploaded
+to **Cloudinary** object storage; only the returned URLs are stored in MySQL (no
+Base64 image payloads in the database). The complaint service reads these variables
+via `application.yml` — **set them before starting `complaint-service`**, otherwise
+image uploads fail at runtime:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -434,3 +435,141 @@ This follows the Database per Service pattern.
 # 📡 API Flow
 
 ###
+
+---
+
+# 🚀 Product Roadmap & Upcoming Releases
+
+> **Note:** Version numbers below represent the **planned product roadmap** and may be
+> adjusted as implementation priorities evolve. `v1.0.0` reflects the currently
+> **released** production functionality; `v1.1.x`, `v1.2.0`, `v2.0.0`, `v2.1.0`, and
+> `v3.0.0` describe **planned/upcoming** functionality that is not yet implemented.
+
+## ✅ v1.0.0 — Production Release
+
+The **current production release**. The core platform is **deployed and operational**, including:
+
+- Web frontend (React + TypeScript)
+- Microservices backend
+- Authentication (JWT + email verification)
+- Complaint management (including image uploads via Cloudinary)
+- Notifications (in-app + EmailJS email, event-driven via RabbitMQ)
+- Docker deployment
+- CI/CD pipeline
+- AWS EC2 backend hosting
+- Vercel frontend hosting
+
+---
+
+## 📋 v1.1.x — Reliability & UX Improvements *(Partially implemented)*
+
+- ✅ **Mandatory resolution/closure proof image:** Admin/authorized personnel must
+  upload a resolution photo before a complaint can be marked as `RESOLVED`. Enforced
+  at the **backend** (the JSON status endpoint rejects `RESOLVED`; the dedicated
+  `/resolve` endpoints validate, upload and store the proof photo before the status
+  change) and surfaced in the admin & field-officer UIs, with the proof photo shown
+  to citizens on the complaint detail page.
+- ✅ **User-facing content cleanup:** Obsolete/misleading content removed and
+  terminology simplified across the complaint workflow (friendly status labels,
+  clearer resolution copy).
+
+---
+
+## 📋 v1.2.0 — Responsive Web Experience *(Planned)*
+
+- Make the existing React web application fully responsive and mobile-friendly
+  across phones, tablets, and desktops.
+- Improve mobile navigation, forms, complaint reporting, image uploads,
+  dashboards, tables, modals, maps, notifications, and other relevant UI components.
+- Serves as the foundation for the future mobile application.
+
+---
+
+## 📋 v2.0.0 — NGO & Community Engagement Platform *(Next Major Release — Planned)*
+
+### NGO Authentication & Dashboard
+
+- Separate NGO login/authentication.
+- Dedicated NGO dashboard.
+- NGO profile and organization information.
+- NGO mission/motive and areas of focus.
+- Progress tracking from the beginning of the NGO's activities.
+- Achievements and milestones.
+- Events and drives management.
+- Participant management.
+- Funds received and expenses/spending transparency related to
+  community-development activities.
+
+### NGO Event & Drive Workflow
+
+```
+NGO creates event/drive
+→ Request submitted for Admin approval
+→ Admin reviews request
+→ Admin approves/rejects
+→ Approved event/drive becomes visible to users
+→ Users can view details and register/join
+→ Registered users receive reminders
+→ Participant information becomes available to the respective NGO dashboard
+→ Admin retains access to monitor and manage events/drives
+```
+
+Admin remains responsible for moderation, approval, and management even after an
+event/drive is published.
+
+### User Participation
+
+- Users can discover upcoming NGO events and drives after logging in.
+- Users can join/register for approved events and drives.
+- Users can view their registered/upcoming/completed participation.
+- Users receive relevant reminders and notifications.
+- Registration/participant data is made available to the respective NGO dashboard
+  with appropriate privacy controls.
+
+---
+
+## 📋 v2.1.0 — AI Capabilities *(Planned)*
+
+A planned enhancement **after the NGO/event data foundation is implemented**.
+Planned AI capabilities include:
+
+- NGO discovery and queries.
+- Event and drive discovery.
+- Articles and community-related queries.
+- Complaint and community insights.
+- User assistance and general platform queries.
+- NGO assistance such as event descriptions, summaries, activity insights, and
+  related operational queries.
+- Admin/community analytics and intelligent insights where appropriate.
+
+AI capabilities will be built on top of the **structured platform data** created
+by the NGO, event, drive, article, and complaint systems.
+
+---
+
+## 📋 v3.0.0 — Mobile Application *(Future Major Release — Planned)*
+
+A future major release, not part of v2.0.0, including:
+
+- Dedicated mobile application.
+- Android/iOS support as appropriate.
+- Reuse the existing backend APIs and API Gateway rather than creating a separate backend.
+- Mobile authentication.
+- Complaint reporting and image capture/upload.
+- Location-aware functionality.
+- Notifications/push notifications.
+- NGO event/drive discovery and registration.
+- User participation tracking.
+
+---
+
+## 📅 Roadmap Summary
+
+| Version | Planned Focus | Status |
+|---------|---------------|--------|
+| v1.0.0 | Production release and core platform | ✅ Released |
+| v1.1.x | Resolution proof + UX/content cleanup | ✅ Partially implemented |
+| v1.2.0 | Responsive/mobile-friendly web experience | 📋 Planned |
+| v2.0.0 | NGO ecosystem, events, drives, approvals and user participation | 📋 Planned |
+| v2.1.0 | AI-powered platform capabilities | 📋 Planned |
+| v3.0.0 | Dedicated mobile application | 📋 Planned |

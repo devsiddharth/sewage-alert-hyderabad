@@ -26,11 +26,24 @@ so no CORS configuration is needed locally. Start the backend stack first
 
 ## Connecting to a deployed gateway
 
+**Vercel (production):** `vercel.json` rewrites `/api/:path*` to the EC2 Spring
+Cloud Gateway (`http://16.113.76.178:8080/api/:path*`), so the browser only ever
+talks to the Vercel domain over HTTPS — no mixed content, no CORS. Do **not** set
+`VITE_API_URL` in the Vercel environment; leave the API base empty so the
+frontend uses relative `/api/...` paths.
+
+```bash
+npm run build
+npm run preview      # serves the production build
+```
+
+**Self-hosted / other hosts:** if the build is served somewhere without a proxy,
+set the gateway URL at build time instead:
+
 ```bash
 cp .env.example .env
 # VITE_API_URL=http://<gateway-host>:8080
 npm run build
-npm run preview      # serves the production build
 ```
 
 ## Scripts
@@ -73,6 +86,12 @@ src/
   compressed client-side and sent as **binary files** via `multipart/form-data`;
   the backend uploads them to Cloudinary object storage and persists only the
   returned URLs (no Base64 payloads in the database).
+- **Resolution proof (v1.1.0):** marking a complaint `RESOLVED` requires a
+  resolution-proof photo. The admin/field-officer UIs send it as a `proofImage`
+  file part to `POST /api/v1/complaints/admin/{id}/resolve` or
+  `POST /api/v1/complaints/field-officer/{id}/resolve`; the backend rejects
+  resolution without a valid photo, uploads it first, and returns the stored URL
+  in `data.resolutionProofImageUrl` (shown to the citizen on the detail page).
 - Notifications are served by the **Notification Service** through
   `GET /api/v1/notifications` (read/unread state is server-side). Settings
   (categories/departments) persist in `localStorage` until configuration

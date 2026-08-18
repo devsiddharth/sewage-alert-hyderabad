@@ -77,6 +77,26 @@ function ComplaintDetailBody({ complaint }: { complaint: Complaint }) {
               <p className="mt-1">{complaint.resolutionRemarks}</p>
             </div>
           )}
+
+          {/* Resolution proof photo — shown to the citizen once the complaint is resolved */}
+          {complaint.resolutionProofImageUrl && (
+            <div className="mt-5">
+              <h2 className="text-base font-semibold text-ink">Resolution proof</h2>
+              <p className="mt-1 text-sm text-muted">Photo uploaded by the team when the issue was fixed.</p>
+              <a
+                href={complaint.resolutionProofImageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 block overflow-hidden rounded-xl border border-line bg-canvas"
+              >
+                <img
+                  src={complaint.resolutionProofImageUrl}
+                  alt="Resolution proof photo"
+                  className="mx-auto max-h-80 w-full object-contain"
+                />
+              </a>
+            </div>
+          )}
         </Card>
 
         {/* Images */}
