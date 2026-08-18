@@ -15,11 +15,12 @@ export function Pagination({
   if (pageCount <= 1 && !total) return null;
 
   const pages = Array.from({ length: Math.max(pageCount, 1) }, (_, i) => i + 1);
+  // On mobile, show fewer page numbers to prevent overflow
   const visible = pageCount > 7 ? [1, page, page + 1, page + 2, pageCount].filter((p, i, a) => p >= 1 && p <= pageCount && a.indexOf(p) === i) : pages;
 
   return (
-    <nav className="flex flex-wrap items-center justify-between gap-3 px-5 py-4" aria-label="Pagination">
-      {total !== undefined && <p className="text-sm text-muted">{total} item{total === 1 ? "" : "s"}</p>}
+    <nav className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 sm:gap-3 sm:px-5 sm:py-4" aria-label="Pagination">
+      {total !== undefined && <p className="text-xs text-muted sm:text-sm">{total} item{total === 1 ? "" : "s"}</p>}
       <div className="flex items-center gap-1">
         <button
           onClick={() => onChange(page - 1)}
@@ -35,7 +36,9 @@ export function Pagination({
             onClick={() => onChange(p)}
             className={cn(
               "h-9 min-w-9 rounded-lg px-2 text-sm font-medium transition-colors",
-              p === page ? "bg-brand text-white" : "text-muted hover:bg-canvas hover:text-ink"
+              p === page ? "bg-brand text-white" : "text-muted hover:bg-canvas hover:text-ink",
+              // Hide middle pages with ellipsis gap on mobile
+              Math.abs(p - page) > 1 && p !== 1 && p !== pageCount && "hidden sm:inline-flex"
             )}
             aria-current={p === page ? "page" : undefined}
           >

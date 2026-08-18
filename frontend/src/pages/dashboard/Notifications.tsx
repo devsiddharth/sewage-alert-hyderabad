@@ -80,10 +80,10 @@ export function Notifications() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Notifications</h1>
+          <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">Notifications</h1>
           <p className="mt-1 text-muted">
             {unread > 0 ? `${unread} unread update${unread === 1 ? "" : "s"}` : "You're all caught up"}
           </p>

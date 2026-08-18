@@ -39,7 +39,7 @@ export function LakesPage() {
   return (
     <>
       <LakesHero />
-      <section className="border-t border-line bg-white py-16">
+      <section className="border-t border-line bg-white py-12 sm:py-16">
         <div className="container-page">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -158,14 +158,14 @@ export function LakesPage() {
 function LakesHero() {
   return (
     <section className="border-b border-line bg-white">
-      <div className="container-page py-14 text-center sm:py-20">
+      <div className="container-page py-10 text-center sm:py-14 lg:py-20">
         <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-3 py-1 text-xs font-semibold text-brand">
           <Waves className="h-3.5 w-3.5" aria-hidden /> Lakes & water bodies
         </span>
-        <h1 className="mx-auto mt-5 max-w-2xl text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
+        <h1 className="mx-auto mt-5 max-w-2xl text-3xl font-extrabold tracking-tight text-ink sm:text-4xl lg:text-5xl">
           The lakes that keep <span className="text-brand">Hyderabad alive</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-muted">
+        <p className="mx-auto mt-4 max-w-xl text-base text-muted sm:text-lg">
           From Hussain Sagar to Durgam Cheruvu — discover the city's water bodies and how restoration is bringing them back.
         </p>
       </div>

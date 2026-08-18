@@ -46,7 +46,7 @@ export function ComplaintTimeline({
         const rejected = step.status === "REJECTED";
         const tone = done ? (rejected ? "bg-red-500" : "bg-success") : "bg-line";
         return (
-          <li key={step.key} className="relative flex gap-4 pb-6 last:pb-0">
+          <li key={step.key} className="relative flex gap-3 pb-5 sm:gap-4 sm:pb-6 last:pb-0">
             {i < ordered.length - 1 && (
               <span
                 className={cn(

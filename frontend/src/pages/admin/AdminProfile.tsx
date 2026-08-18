@@ -57,14 +57,14 @@ export function AdminProfile() {
   }, [user?.id]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">My profile</h1>
-        <p className="mt-1 text-muted">Manage your administrator account details.</p>
+        <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">My profile</h1>
+        <p className="mt-1 text-sm text-muted sm:text-base">Manage your administrator account details.</p>
       </div>
 
       {/* Identity card */}
-      <Card className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <Card className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:p-6">
         <div className="flex items-center gap-4">
           <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand text-xl font-bold text-white">
             {initials(user?.name)}
@@ -146,10 +146,9 @@ export function AdminProfile() {
       {/* Quick actions */}
       <div>
         <h2 className="text-base font-semibold text-ink">Quick actions</h2>
-        <p className="mt-0.5 text-sm text-muted">More profile tools are on the way.</p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <p className="mt-0.5 text-sm text-muted">More profile tools are on the way.</p>            <div className="mt-4 grid gap-3 sm:grid-cols-3 sm:gap-4">
           {QUICK_ACTIONS.map((action) => (
-            <Card key={action.title} className="flex flex-col p-5">
+            <Card key={action.title} className="flex flex-col p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-brand">
                   {action.icon}
@@ -160,7 +159,7 @@ export function AdminProfile() {
                 </div>
               </div>
               <div className="mt-4 flex-1" />
-              <Button variant="outline" disabled fullWidth>
+              <Button variant="outline" disabled fullWidth className="mt-auto">
                 Coming soon
               </Button>
             </Card>

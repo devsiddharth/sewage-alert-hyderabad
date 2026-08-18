@@ -80,14 +80,14 @@ export function InfrastructurePage() {
 function InfraHero() {
   return (
     <section className="border-b border-line bg-white">
-      <div className="container-page py-14 text-center sm:py-20">
+      <div className="container-page py-10 text-center sm:py-14 lg:py-20">
         <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-3 py-1 text-xs font-semibold text-brand">
           <Droplets className="h-3.5 w-3.5" aria-hidden /> Water & sanitation infrastructure
         </span>
-        <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
+        <h1 className="mx-auto mt-5 max-w-3xl text-3xl font-extrabold tracking-tight text-ink sm:text-4xl lg:text-5xl">
           How Hyderabad treats its sewage & designs its <span className="text-brand">pipeline network</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-muted">
+        <p className="mx-auto mt-4 max-w-2xl text-base text-muted sm:text-lg">
           From the treatment plan followed by HMWS&SB to the sewer network beneath your street — understand the journey of wastewater in Hyderabad.
         </p>
       </div>
@@ -97,7 +97,7 @@ function InfraHero() {
 
 function TreatmentSection() {
   return (
-    <section className="border-t border-line bg-white py-20">
+    <section className="border-t border-line bg-white py-16 sm:py-20">
       <div className="container-page">
         <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr] lg:items-start">
           <div className="lg:sticky lg:top-24">
@@ -156,7 +156,7 @@ function TreatmentSection() {
 
 function PipelineSection() {
   return (
-    <section className="border-t border-line bg-canvas py-20">
+    <section className="border-t border-line bg-canvas py-16 sm:py-20">
       <div className="container-page">
         <div className="mx-auto max-w-2xl text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 mx-auto">
@@ -168,7 +168,7 @@ function PipelineSection() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
           {PIPELINE_FEATURES.map((f) => (
             <Card
               key={f.title}

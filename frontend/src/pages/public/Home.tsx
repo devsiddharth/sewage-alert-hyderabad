@@ -45,13 +45,13 @@ function Hero({ stats }: { stats: ReturnType<typeof usePublicStats> }) {
 
   return (
     <section className="border-b border-line bg-white">
-      <div className="container-page grid items-center gap-12 py-16 lg:grid-cols-2 lg:py-24">
+      <div className="container-page grid items-center gap-8 py-12 sm:gap-12 sm:py-16 lg:grid-cols-2 lg:py-24">
         <div className="animate-fade-in-slow">
           <span className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-soft px-3 py-1 text-xs font-semibold text-brand">
             <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden />
             Citizen-first civic platform
           </span>
-          <h1 className="mt-5 text-4xl font-extrabold leading-[1.1] tracking-tight text-balance text-ink sm:text-5xl lg:text-[3.4rem]">
+          <h1 className="mt-5 text-3xl font-extrabold leading-[1.1] tracking-tight text-balance text-ink sm:text-4xl lg:text-5xl xl:text-[3.4rem]">
             Report a sewage issue.
             <span className="block text-brand">Track it to resolution.</span>
           </h1>
@@ -72,7 +72,7 @@ function Hero({ stats }: { stats: ReturnType<typeof usePublicStats> }) {
               Track Complaint
             </Button>
           </div>
-          <ul className="mt-10 grid max-w-lg grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+          <ul className="mt-8 grid max-w-lg grid-cols-2 gap-x-4 gap-y-3 sm:mt-10 sm:grid-cols-4 sm:gap-x-6 sm:gap-y-4">
             {[
               { icon: <Camera className="h-4 w-4" />, label: "Photo Upload" },
               { icon: <LocateFixed className="h-4 w-4" />, label: "GPS Enabled" },
@@ -215,15 +215,15 @@ function Features() {
       <div className="container-page">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">Why SewageAlert</p>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          <h2 className="mt-3 text-2xl font-bold tracking-tight text-ink sm:text-3xl lg:text-4xl">
             Everything you need to fix your city
           </h2>
-          <p className="mt-4 text-lg text-muted">
+          <p className="mt-4 text-base text-muted sm:text-lg">
             Built around one promise: reporting a civic issue should take less time than it takes to
             complain about it.
           </p>
         </div>
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-4 sm:mt-14 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {features.map((f, i) => (
             <Card
               key={f.title}
@@ -259,7 +259,7 @@ function HowItWorks() {
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl">How it works</h2>
           <p className="mt-4 text-lg text-muted">Four steps between a dirty street and a clean one.</p>
         </div>
-        <ol className="relative mt-14 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="relative mt-10 grid gap-8 sm:mt-14 sm:grid-cols-2 sm:gap-10 lg:grid-cols-4">
           {steps.map((s, i) => (
             <li key={s.n} className="relative">
               {i < steps.length - 1 && (
@@ -317,9 +317,9 @@ function LiveStats({ stats }: { stats: ReturnType<typeof usePublicStats> }) {
             the backend services to see real statistics.
           </p>
         )}
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
           {items.map((s) => (
-            <Card key={s.label} className="p-6 text-center">
+            <Card key={s.label} className="p-5 text-center sm:p-6">
               {stats.loading ? (
                 <Skeleton className="mx-auto h-10 w-10 rounded-2xl" />
               ) : (
@@ -404,9 +404,8 @@ function Faq() {
   ];
   const [open, setOpen] = useState<number | null>(0);
 
-  return (
-    <section id="faq" className="border-t border-line bg-white py-20">
-      <div className="container-page grid gap-12 lg:grid-cols-[1fr_1.4fr]">
+  return (      <section id="faq" className="border-t border-line bg-white py-16 sm:py-20">
+      <div className="container-page grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-accent">FAQ</p>
           <h2 className="mt-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
@@ -452,7 +451,7 @@ function Faq() {
 function Contact() {
   const navigate = useNavigate();
   return (
-    <section id="contact" className="border-t border-line bg-canvas py-20">
+    <section id="contact" className="border-t border-line bg-canvas py-16 sm:py-20">
       <div className="container-page">
         <Card className="overflow-hidden">
           <div className="grid lg:grid-cols-2">

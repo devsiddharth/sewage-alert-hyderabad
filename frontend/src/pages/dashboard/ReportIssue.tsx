@@ -190,10 +190,10 @@ export function ReportIssue() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink">Report an issue</h1>
-          <p className="mt-1 text-sm text-muted">Takes less than a minute. Everything is saved the moment you submit.</p>
+          <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">Report an issue</h1>
+          <p className="mt-1 text-sm text-muted">Takes less than a minute. Everything is saved when you submit.</p>
         </div>
         <span className="hidden rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-brand sm:block">
           Report details
@@ -202,7 +202,7 @@ export function ReportIssue() {
 
       <form onSubmit={submit} className="mt-8 space-y-6">
         {/* Category */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-base font-semibold text-ink">What&apos;s the issue?</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {ISSUE_CATEGORIES.map((c) => (
@@ -231,9 +231,9 @@ export function ReportIssue() {
         </Card>
 
         {/* Photos */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-base font-semibold text-ink">Add photos</h2>
-          <p className="mt-1 text-sm text-muted">Up to 4 photos help authorities prioritise. Optional but recommended.</p>
+          <p className="mt-1 text-sm text-muted">Up to 4 photos help authorities prioritise the issue.</p>
           <div
             onDrop={onDrop}
             onDragOver={(e) => e.preventDefault()}
@@ -277,11 +277,11 @@ export function ReportIssue() {
         </Card>
 
         {/* Location */}
-        <Card className="p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <Card className="p-4 sm:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-base font-semibold text-ink">Location</h2>
-              <p className="mt-1 text-sm text-muted">We use this to send the right field team to the right place.</p>
+              <p className="mt-1 text-sm text-muted">Used to send the right team to the right place.</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={detectGps} loading={geo.locating} icon={<LocateFixed className="h-4 w-4" />}>
               {geo.locating ? "Detecting…" : "Detect my location"}
@@ -327,7 +327,7 @@ export function ReportIssue() {
         </Card>
 
         {/* Severity + description */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <h2 className="text-base font-semibold text-ink">Severity & details</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
             {SEVERITY_LEVELS.map((s) => (
@@ -364,7 +364,7 @@ export function ReportIssue() {
           </div>
         </Card>
 
-        <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
           <Link
             to="/dashboard"
             className="inline-flex h-12 items-center justify-center rounded-xl border border-line bg-white px-6 text-sm font-semibold text-ink transition-colors hover:border-accent"

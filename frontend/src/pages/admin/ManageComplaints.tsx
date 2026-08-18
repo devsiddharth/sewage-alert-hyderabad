@@ -11,7 +11,6 @@ import { Pagination } from "@/components/ui/Pagination";
 import { ComplaintDetailView } from "@/components/complaints/ComplaintDetail";
 import { AssignOfficerModal } from "@/components/admin/AssignOfficerModal";
 import { useComplaints } from "@/hooks/useComplaints";
-import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { useToast } from "@/lib/toast";
 import { assignComplaint, fetchFieldOfficers, resolveComplaint } from "@/services/assignment";
@@ -59,7 +58,6 @@ export function ManageComplaints() {
   const [params] = useSearchParams();
   const { toast } = useToast();
   const { complaints, loading, reload } = useComplaints();
-  const user = useAuth().user;
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"ALL" | ComplaintStatus>(
@@ -242,16 +240,16 @@ export function ManageComplaints() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Complaint management</h1>
+        <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">Complaint management</h1>
         <p className="mt-1 text-muted">
           {complaints ? `${complaints.length} total · ${filtered.length} shown` : "Loading…"}
         </p>
       </div>
 
       {/* Filters */}
-      <Card className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+      <Card className="flex flex-col gap-3 p-3 sm:p-4 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by ID, title or description…" className="pl-10" />
@@ -292,31 +290,31 @@ export function ManageComplaints() {
               <thead>
                 <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
                   <SortHeader label="ID" k="createdAt" sort={sort} sortDir={sortDir} onToggle={toggleSort} />
-                  <th className="px-4 py-3 font-semibold sm:px-6">Title</th>
-                  <th className="px-4 py-3 font-semibold sm:px-6">Location</th>
-                  <th className="px-4 py-3 font-semibold sm:px-6">Status</th>
-                  <th className="px-4 py-3 font-semibold sm:px-6">Assigned to</th>
+                  <th className="px-3 py-3 font-semibold sm:px-4">Title</th>
+                  <th className="hidden px-3 py-3 font-semibold sm:table-cell sm:px-4">Location</th>
+                  <th className="px-3 py-3 font-semibold sm:px-4">Status</th>
+                  <th className="hidden px-3 py-3 font-semibold sm:table-cell sm:px-4">Assigned to</th>
                   <SortHeader label="Priority" k="priority" sort={sort} sortDir={sortDir} onToggle={toggleSort} />
-                  <th className="px-4 py-3 font-semibold sm:px-6">Reported</th>
-                  <th className="px-4 py-3 text-right font-semibold sm:px-6">Actions</th>
+                  <th className="hidden px-3 py-3 font-semibold sm:table-cell sm:px-4">Reported</th>
+                  <th className="px-3 py-3 text-right font-semibold sm:px-4">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {pageItems.map((c) => (
                   <tr key={c.id} className="transition-colors hover:bg-canvas/60">
-                    <td className="px-4 py-3.5 font-mono font-semibold text-brand sm:px-6">{complaintCode(c.id)}</td>
-                    <td className="max-w-[260px] px-4 py-3.5 sm:px-6">
-                      <p className="truncate font-medium text-ink">{c.title}</p>
+                    <td className="px-3 py-3 font-mono text-xs font-semibold text-brand sm:px-4 sm:py-3.5 sm:text-sm">{complaintCode(c.id)}</td>
+                    <td className="max-w-[160px] px-3 py-3 sm:max-w-[260px] sm:px-4 sm:py-3.5">
+                      <p className="truncate text-sm font-medium text-ink">{c.title}</p>
                       <p className="truncate text-xs text-muted">{c.description}</p>
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6">
+                    <td className="hidden px-3 py-3 sm:table-cell sm:px-4 sm:py-3.5">
                       <span className="inline-flex items-center gap-1.5 font-mono text-xs text-muted">
                         <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
                         {c.latitude.toFixed(4)}, {c.longitude.toFixed(4)}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6"><StatusBadge status={c.status} /></td>
-                    <td className="px-4 py-3.5 sm:px-6">
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5"><StatusBadge status={c.status} /></td>
+                    <td className="hidden px-3 py-3 sm:table-cell sm:px-4 sm:py-3.5">
                       {officersLoading ? (
                         <Skeleton className="h-5 w-28 rounded-full" />
                       ) : c.assignedTo ? (
@@ -330,9 +328,9 @@ export function ManageComplaints() {
                         </Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6"><PriorityBadge priority={c.priority} /></td>
-                    <td className="px-4 py-3.5 text-muted sm:px-6" title={formatDateTime(c.createdAt)}>{timeAgo(c.createdAt)}</td>
-                    <td className="px-4 py-3.5 sm:px-6">
+                    <td className="hidden px-3 py-3 sm:table-cell sm:px-4 sm:py-3.5"><PriorityBadge priority={c.priority} /></td>
+                    <td className="hidden px-3 py-3 text-muted sm:table-cell sm:px-4 sm:py-3.5" title={formatDateTime(c.createdAt)}>{timeAgo(c.createdAt)}</td>
+                    <td className="px-3 py-3 sm:px-4 sm:py-3.5">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setDetailId(c.id)}
@@ -396,8 +394,8 @@ export function ManageComplaints() {
         title={`${statusVal === "RESOLVED" ? "Resolve" : "Update"} ${editing ? complaintCode(editing.id) : ""}`}
         description={
           statusVal === "RESOLVED"
-            ? "A resolution photo is mandatory before this complaint can be marked as resolved."
-            : `Assign priority and move the complaint forward. Acting as ${user?.name ?? "authority"}.`
+            ? "A resolution photo is required before this complaint can be marked as resolved."
+            : "Assign priority and move the complaint forward."
         }
       >
         <div className="space-y-5">

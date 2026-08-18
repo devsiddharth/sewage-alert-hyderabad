@@ -57,13 +57,13 @@ export function AdminDashboard() {
   const pendingList = all.filter((c) => c.status === "PENDING").slice(0, 5);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Command centre</h1>
-        <p className="mt-1 text-muted">Live overview of complaints across Hyderabad.</p>
+        <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">Dashboard</h1>
+        <p className="mt-1 text-sm text-muted sm:text-base">Live overview of complaints across Hyderabad.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
         <StatCard label="Total complaints" value={loading ? "…" : stats.total} icon={<FileText className="h-5 w-5" />} tone="brand" />
         <StatCard label="Resolved" value={loading ? "…" : stats.resolved} icon={<CheckCircle2 className="h-5 w-5" />} tone="green" />
         <StatCard label="In progress" value={loading ? "…" : stats.inProgress} icon={<Clock className="h-5 w-5" />} tone="blue" />
@@ -76,7 +76,7 @@ export function AdminDashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+      <div className="grid gap-5 sm:gap-6 lg:grid-cols-[1.6fr_1fr]">
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -162,21 +162,21 @@ export function AdminDashboard() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
-                  <th className="px-6 py-3 font-semibold">ID</th>
-                  <th className="px-6 py-3 font-semibold">Title</th>
-                  <th className="px-6 py-3 font-semibold">Status</th>
-                  <th className="px-6 py-3 font-semibold">Priority</th>
-                  <th className="px-6 py-3 font-semibold">Reported</th>
+                  <th className="px-4 py-3 font-semibold sm:px-6">ID</th>
+                  <th className="px-4 py-3 font-semibold sm:px-6">Title</th>
+                  <th className="px-4 py-3 font-semibold sm:px-6">Status</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell sm:px-6">Priority</th>
+                  <th className="hidden px-4 py-3 font-semibold sm:table-cell sm:px-6">Reported</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {recent.map((c) => (
                   <tr key={c.id} className="transition-colors hover:bg-canvas/60">
-                    <td className="px-6 py-3.5 font-mono font-semibold text-brand">{complaintCode(c.id)}</td>
-                    <td className="max-w-xs truncate px-6 py-3.5 font-medium text-ink">{c.title}</td>
-                    <td className="px-6 py-3.5"><StatusBadge status={c.status} /></td>
-                    <td className="px-6 py-3.5"><PriorityBadge priority={c.priority} /></td>
-                    <td className="px-6 py-3.5 text-muted" title={formatDateTime(c.createdAt)}>{timeAgo(c.createdAt)}</td>
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-brand sm:px-6 sm:py-3.5 sm:text-sm">{complaintCode(c.id)}</td>
+                    <td className="max-w-[160px] truncate px-4 py-3 text-sm font-medium text-ink sm:max-w-xs sm:px-6 sm:py-3.5">{c.title}</td>
+                    <td className="px-4 py-3 sm:px-6 sm:py-3.5"><StatusBadge status={c.status} /></td>
+                    <td className="hidden px-4 py-3 sm:table-cell sm:px-6 sm:py-3.5"><PriorityBadge priority={c.priority} /></td>
+                    <td className="hidden px-4 py-3 text-muted sm:table-cell sm:px-6 sm:py-3.5" title={formatDateTime(c.createdAt)}>{timeAgo(c.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -32,6 +32,16 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* Mobile-friendly table card layout — use on rows that should stack as cards on small screens */
+  .table-card-row {
+    @apply flex flex-col gap-3 rounded-2xl border border-line bg-white p-4 shadow-card;
+  }
+
+  /* Ensure touch targets are at least 44px (Apple HIG) */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
 }
 
 /* ---------------------------------------------------------------------------

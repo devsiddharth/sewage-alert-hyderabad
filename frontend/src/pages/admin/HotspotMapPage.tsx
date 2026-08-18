@@ -91,7 +91,7 @@ export function HotspotMapPage() {
   return (
     <div
       className={cn(
-        "hotspot-page flex flex-1 flex-col gap-4 p-4 lg:min-h-0 lg:gap-5 lg:p-6",
+        "hotspot-page flex flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:min-h-0 lg:gap-5 lg:p-6",
         detailId !== null ? "lg:overflow-hidden" : "lg:overflow-y-auto",
         dark && "dark"
       )}
@@ -157,7 +157,7 @@ export function HotspotMapPage() {
 
       {/* Filters + map — flex-1 + min-h-0 lets the row (and the map inside it)
           stretch to fill every pixel of the remaining viewport height. */}
-      <div className="grid flex-1 gap-4 lg:min-h-0 lg:grid-rows-[1fr] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] lg:gap-5">
+      <div className="grid flex-1 gap-3 sm:gap-4 lg:min-h-0 lg:grid-rows-[1fr] lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)] lg:gap-5">
         <HotspotFilters
           filters={filters}
           activeCount={activeCount}

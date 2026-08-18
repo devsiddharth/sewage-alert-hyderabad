@@ -48,23 +48,23 @@ export function DashboardHome() {
   return (
     <div className="space-y-8">
       {/* Welcome */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+          <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">
             {greeting}, {user?.name.split(" ")[0]}
           </h1>
-          <p className="mt-1 text-muted">Here&apos;s what&apos;s happening with your reports.</p>
+          <p className="mt-1 text-sm text-muted sm:text-base">Here&apos;s what&apos;s happening with your reports.</p>
         </div>
         <Link
           to="/dashboard/report"
-          className="inline-flex h-11 items-center gap-2 rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-brand-light"
+          className="touch-target inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-all duration-200 hover:bg-brand-light"
         >
           <Plus className="h-4 w-4" /> Report New Issue
         </Link>
       </div>
 
       {/* Quick actions */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
         {[
           { to: "/dashboard/report", icon: <Camera className="h-5 w-5" />, title: "Report new issue", desc: "Photo + GPS in under a minute" },
           { to: "/track", icon: <Search className="h-5 w-5" />, title: "Track a complaint", desc: "Enter an ID to see live status" },

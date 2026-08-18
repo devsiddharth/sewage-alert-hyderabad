@@ -25,18 +25,18 @@ export function TrackComplaint() {
   };
 
   return (
-    <div className="container-page py-12 lg:py-16">
+    <div className="container-page py-10 sm:py-12 lg:py-16">
       <div className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-semibold uppercase tracking-wider text-accent">Track a complaint</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+        <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink sm:text-3xl lg:text-4xl">
           Where is my complaint?
         </h1>
-        <p className="mt-3 text-lg text-muted">
+        <p className="mt-3 text-base text-muted sm:text-lg">
           Enter the complaint ID you received when you filed your report.
         </p>
       </div>
 
-      <form onSubmit={submit} className="mx-auto mt-8 max-w-xl" noValidate>
+      <form onSubmit={submit} className="mx-auto mt-6 max-w-xl sm:mt-8" noValidate>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />

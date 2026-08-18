@@ -91,7 +91,7 @@ export function FieldOfficerComplaintDetail() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/officer/complaints"
@@ -102,7 +102,7 @@ export function FieldOfficerComplaintDetail() {
       </div>
 
       {canUpdate && complaint && (
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-brand">
               <Hammer className="h-5 w-5" />

@@ -5,7 +5,7 @@ import { Logo } from "@/components/ui/Logo";
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="flex flex-col justify-center px-6 py-12 sm:px-12">
+      <div className="flex flex-col justify-center px-5 py-10 sm:px-12 sm:py-12">
         <div className="mx-auto w-full max-w-md">
           <Link to="/" className="inline-flex" aria-label="Back to home">
             <Logo />

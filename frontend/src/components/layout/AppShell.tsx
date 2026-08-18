@@ -151,12 +151,12 @@ export function AppShell({
       {/* Mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-brand-dark/50" onClick={() => setOpen(false)} aria-hidden />
+          <div className="absolute inset-0 bg-brand-dark/50 backdrop-blur-sm" onClick={() => setOpen(false)} aria-hidden />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] animate-fade-in">
             <div className={cn("h-full", accent === "admin" ? "bg-brand-dark" : "bg-brand")}>
               <button
                 onClick={() => setOpen(false)}
-                className="absolute right-3 top-4 rounded-lg p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
+                className="absolute right-3 top-4 flex h-10 w-10 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" />
@@ -169,10 +169,10 @@ export function AppShell({
 
       <div className={cn("lg:pl-64", fullBleed && "flex min-h-0 flex-1 flex-col")}>
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-white/90 px-4 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-white/90 px-3 backdrop-blur sm:h-16 sm:px-4 lg:hidden">
           <button
             onClick={() => setOpen(true)}
-            className="rounded-lg p-2 text-ink transition-colors hover:bg-canvas"
+            className="touch-target flex items-center justify-center rounded-lg p-2 text-ink transition-colors hover:bg-canvas"
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
@@ -188,7 +188,7 @@ export function AppShell({
             "mx-auto w-full",
             fullBleed
               ? "flex min-h-0 flex-1 flex-col"
-              : "max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8"
+              : "max-w-7xl px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8"
           )}
         >
           <Outlet />
