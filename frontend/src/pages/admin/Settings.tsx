@@ -124,17 +124,17 @@ export function SettingsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Settings</h1>
-        <p className="mt-1 text-muted">Platform configuration used across the reporting workflow.</p>
+        <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">Settings</h1>
+        <p className="mt-1 text-sm text-muted sm:text-base">Platform configuration used across the reporting workflow.</p>
       </div>
 
       <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
         <p>
-          Configuration endpoints aren&apos;t exposed by the backend yet, so these settings are saved
-          on this device and reused by the report form.
+          These settings are saved on this device. Changes here affect how the report form
+          presents categories and departments.
         </p>
       </div>
 

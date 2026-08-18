@@ -168,7 +168,7 @@ export function Register() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
             <CheckCircle2 className="h-7 w-7" />
           </div>
-          <h1 className="mt-6 text-3xl font-bold tracking-tight text-ink">You&apos;re all set!</h1>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink sm:text-3xl">You&apos;re all set!</h1>
           <p className="mt-3 max-w-md leading-relaxed text-muted">
             Your email{" "}
             <span className="font-semibold text-ink">{registeredEmail}</span> has been verified and your
@@ -194,7 +194,7 @@ export function Register() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft text-brand">
             <ShieldCheck className="h-7 w-7" />
           </div>
-          <h1 className="mt-6 text-3xl font-bold tracking-tight text-ink">Verify your email</h1>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink sm:text-3xl">Verify your email</h1>
           <p className="mt-3 max-w-md leading-relaxed text-muted">
             We sent a <span className="font-semibold text-ink">6-digit verification code</span> to{" "}
             <span className="font-semibold text-ink">{registeredEmail}</span>. Enter it below to
@@ -211,7 +211,7 @@ export function Register() {
               </div>
             )}
 
-            <div className="flex justify-between gap-2 sm:gap-3">
+            <div className="grid grid-cols-6 gap-2 sm:gap-3">
               {Array.from({ length: OTP_LENGTH }).map((_, index) => (
                 <input
                   key={index}
@@ -226,7 +226,7 @@ export function Register() {
                   autoComplete={index === 0 ? "one-time-code" : "off"}
                   maxLength={1}
                   aria-label={`Digit ${index + 1} of verification code`}
-                  className="h-14 w-11 rounded-xl border border-line bg-white text-center text-2xl font-bold text-ink outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/15 sm:h-16 sm:w-14"
+                  className="h-12 w-full rounded-xl border border-line bg-white text-center text-xl font-bold text-ink outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/15 sm:h-16 sm:text-2xl"
                 />
               ))}
             </div>
@@ -269,8 +269,8 @@ export function Register() {
   // ── Registration form ─────────────────────────────────────────────────────
   return (
     <AuthLayout>
-      <h1 className="text-3xl font-bold tracking-tight text-ink">Create your account</h1>
-      <p className="mt-2 text-muted">Join thousands of citizens keeping Hyderabad clean.</p>
+      <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Create your account</h1>
+      <p className="mt-2 text-muted">Join citizens keeping Hyderabad clean.</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5" noValidate>
         {error && (

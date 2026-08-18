@@ -10,7 +10,7 @@ export function ComplaintCard({ complaint, basePath }: { complaint: Complaint; b
   return (
     <Link
       to={`${basePath}/${complaint.id}`}
-      className="group flex gap-4 rounded-2xl border border-line bg-white p-4 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-lift sm:p-5"
+      className="group flex gap-3 rounded-2xl border border-line bg-white p-3 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:border-accent/60 hover:shadow-lift sm:gap-4 sm:p-4 lg:p-5"
     >
       {hasImage && (
         <div className="hidden h-20 w-20 shrink-0 overflow-hidden rounded-xl sm:block">
@@ -29,7 +29,7 @@ export function ComplaintCard({ complaint, basePath }: { complaint: Complaint; b
         </div>
         <h3 className="mt-2 truncate text-[15px] font-semibold text-ink">{complaint.title}</h3>
         <p className="mt-1 line-clamp-2 text-sm text-muted">{complaint.description}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted sm:mt-3 sm:gap-x-4">
           <span className="inline-flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5" aria-hidden />
             {complaint.latitude.toFixed(4)}, {complaint.longitude.toFixed(4)}

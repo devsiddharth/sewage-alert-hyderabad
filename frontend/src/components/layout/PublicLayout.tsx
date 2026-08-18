@@ -71,7 +71,7 @@ export function PublicLayout() {
           </div>
 
           <button
-            className="rounded-lg p-2 text-ink transition-colors hover:bg-canvas md:hidden"
+            className="touch-target flex items-center justify-center rounded-lg p-2 text-ink transition-colors hover:bg-canvas md:hidden"
             onClick={() => setOpen((v) => !v)}
             aria-label={open ? "Close menu" : "Open menu"}
             aria-expanded={open}
@@ -140,7 +140,7 @@ export function PublicLayout() {
 function Footer() {
   return (
     <footer className="border-t border-line bg-white">
-      <div className="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container-page grid gap-8 py-10 sm:grid-cols-2 sm:gap-10 sm:py-12 lg:grid-cols-4">
         <div>
           <Logo />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
@@ -187,7 +187,7 @@ function Footer() {
         </div>
       </div>
       <div className="border-t border-line">
-        <div className="container-page flex flex-col items-center justify-between gap-2 py-5 text-xs text-muted sm:flex-row">
+        <div className="container-page flex flex-col items-center justify-between gap-2 py-4 text-xs text-muted sm:flex-row sm:py-5">
           <p>© {new Date().getFullYear()} SewageAlert Hyderabad · Government of Telangana initiative</p>
           <p className={cn("inline-flex items-center gap-1.5")}>
             <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden />

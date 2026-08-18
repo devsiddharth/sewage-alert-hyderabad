@@ -101,14 +101,14 @@ export function Profile() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Profile settings</h1>
-        <p className="mt-1 text-muted">Manage your account details and preferences.</p>
+        <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">Profile settings</h1>
+        <p className="mt-1 text-sm text-muted sm:text-base">Manage your account details and preferences.</p>
       </div>
 
       {/* Identity card */}
-      <Card className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <Card className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-5 sm:p-6">
         <div className="flex items-center gap-4">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand text-xl font-bold text-white">
             {initials(user?.name)}
@@ -181,11 +181,11 @@ export function Profile() {
               <div className="flex items-start gap-3 rounded-xl bg-canvas p-4">
                 <KeyRound className="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden />
                 <p className="text-sm leading-relaxed text-muted">
-                  Password reset links aren&apos;t available yet. Call{" "}
+                  To change your password, call our helpline at{" "}
                   <a href="tel:04023456789" className="font-semibold text-brand hover:underline">
                     040-2345 6789
                   </a>{" "}
-                  and support will reset it for you.
+                  and a support agent will help you.
                 </p>
               </div>
             </div>

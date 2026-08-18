@@ -51,10 +51,10 @@ export function AssignedComplaints() {
   const pageItems = (complaints ?? []).slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Assigned complaints</h1>
+          <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">Assigned complaints</h1>
           <p className="mt-1 text-muted">
             {complaints ? `${complaints.length} complaint${complaints.length === 1 ? "" : "s"} assigned to you` : "Loading…"}
           </p>
@@ -110,38 +110,38 @@ export function AssignedComplaints() {
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
                 <tr className="border-b border-line text-xs uppercase tracking-wide text-muted">
-                  <th className="px-4 py-3 font-semibold sm:px-6">Complaint</th>
-                  <th className="px-4 py-3 font-semibold sm:px-6">Location</th>
-                  <th className="px-4 py-3 font-semibold sm:px-6">Status</th>
-                  <th className="px-4 py-3 text-right font-semibold sm:px-6">Action</th>
+                  <th className="px-3 py-3 font-semibold sm:px-6">Complaint</th>
+                  <th className="hidden px-3 py-3 font-semibold sm:table-cell sm:px-6">Location</th>
+                  <th className="px-3 py-3 font-semibold sm:px-6">Status</th>
+                  <th className="px-3 py-3 text-right font-semibold sm:px-6">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
                 {pageItems.map((c) => (
                   <tr key={c.id} className="transition-colors hover:bg-canvas/60">
-                    <td className="px-4 py-3.5 sm:px-6">
-                      <p className="font-mono font-semibold text-brand">{complaintCode(c.id)}</p>
-                      <p className="mt-0.5 max-w-[240px] truncate text-xs text-muted" title={c.description}>
+                    <td className="px-3 py-3 sm:px-6 sm:py-3.5">
+                      <p className="font-mono text-xs font-semibold text-brand sm:text-sm">{complaintCode(c.id)}</p>
+                      <p className="mt-0.5 max-w-[160px] truncate text-xs text-muted sm:max-w-[240px]" title={c.description}>
                         {c.title}
                       </p>
                     </td>
-                    <td className="px-4 py-3.5 text-muted sm:px-6">
+                    <td className="hidden px-3 py-3 text-muted sm:table-cell sm:px-6 sm:py-3.5">
                       <span className="inline-flex items-center gap-1.5 font-mono text-xs">
                         <MapPin className="h-3.5 w-3.5 text-muted" aria-hidden />
                         {c.latitude.toFixed(4)}, {c.longitude.toFixed(4)}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6">
+                    <td className="px-3 py-3 sm:px-6 sm:py-3.5">
                       <StatusBadge status={c.status} />
-                      <p className="mt-1 text-[11px] text-muted" title={formatDateTime(c.updatedAt)}>
+                      <p className="mt-1 hidden text-[11px] text-muted sm:block" title={formatDateTime(c.updatedAt)}>
                         Updated {formatDateTime(c.updatedAt)}
                       </p>
                     </td>
-                    <td className="px-4 py-3.5 sm:px-6">
+                    <td className="px-3 py-3 sm:px-6 sm:py-3.5">
                       <div className="flex justify-end">
                         <Link
                           to={`/officer/complaints/${c.id}`}
-                          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-brand transition-colors hover:bg-canvas"
+                          className="touch-target inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-brand transition-colors hover:bg-canvas"
                         >
                           <Eye className="h-4 w-4" /> View
                         </Link>
@@ -159,8 +159,7 @@ export function AssignedComplaints() {
       </Card>
 
       <p className="text-center text-xs text-muted">
-        Signed in as <span className="font-semibold text-ink">{user?.name}</span> · You can only see complaints
-        assigned to you.
+        Signed in as <span className="font-semibold text-ink">{user?.name}</span> · Showing complaints assigned to you.
       </p>
     </div>
   );

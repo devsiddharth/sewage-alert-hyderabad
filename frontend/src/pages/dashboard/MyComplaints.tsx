@@ -36,10 +36,10 @@ export function MyComplaints() {
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">My complaints</h1>
+          <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">My complaints</h1>
           <p className="mt-1 text-muted">
             {complaints ? `${complaints.length} total · ${filtered.length} shown` : "Loading your reports…"}
           </p>
@@ -53,7 +53,7 @@ export function MyComplaints() {
       </div>
 
       {/* Filters */}
-      <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      <Card className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:p-4">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden />
           <input

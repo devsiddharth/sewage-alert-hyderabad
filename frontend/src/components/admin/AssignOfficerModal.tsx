@@ -55,7 +55,7 @@ export function AssignOfficerModal({
     >
       <div className="space-y-5">
         {complaint && (
-          <div className="rounded-xl border border-line bg-canvas px-4 py-3">
+          <div className="rounded-xl border border-line bg-canvas px-3 py-2.5 sm:px-4 sm:py-3">
             <p className="text-sm font-semibold text-ink">{complaint.title}</p>
             <p className="mt-0.5 line-clamp-2 text-xs text-muted">{complaint.description}</p>
           </div>

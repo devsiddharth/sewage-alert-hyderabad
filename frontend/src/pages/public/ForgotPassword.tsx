@@ -5,10 +5,6 @@ import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Field";
 
-// NOTE: The backend does not expose a password-reset endpoint yet. The form
-// follows best practice (never reveal whether an account exists) and the
-// success state explains the next step. Wire this to a real endpoint when the
-// notification service ships.
 export function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -35,22 +31,22 @@ export function ForgotPassword() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-success-soft text-emerald-600">
             <MailCheck className="h-7 w-7" />
           </div>
-          <h1 className="mt-6 text-3xl font-bold tracking-tight text-ink">Check your inbox</h1>
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-ink sm:text-3xl">Check your inbox</h1>
           <p className="mt-3 max-w-md leading-relaxed text-muted">
             If an account exists for <span className="font-semibold text-ink">{email}</span>, we&apos;ve
             sent instructions to reset your password. The link expires in 30 minutes.
           </p>
           <div className="mt-8 rounded-xl border border-line bg-canvas px-5 py-4 text-sm text-muted">
-            Didn&apos;t receive an email? Call the helpline at{" "}
+            Didn&apos;t receive an email? Check your spam folder, or call our helpline at{" "}
             <a href="tel:04023456789" className="font-semibold text-brand hover:underline">
               040-2345 6789
             </a>{" "}
-            and a support agent will reset your password manually.
+            for help.
           </div>
         </div>
       ) : (
         <>
-          <h1 className="mt-8 text-3xl font-bold tracking-tight text-ink">Reset your password</h1>
+          <h1 className="mt-8 text-2xl font-bold tracking-tight text-ink sm:text-3xl">Reset your password</h1>
           <p className="mt-2 text-muted">
             Enter the email linked to your account and we&apos;ll send you a reset link.
           </p>

@@ -115,20 +115,20 @@ export function AnalyticsPage() {
   const maxCount = Math.max(1, ...rangeData.map((d) => d.count));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Analytics</h1>
-        <p className="mt-1 text-muted">Resolution performance and reporting patterns.</p>
+        <h1 className="text-xl font-bold tracking-tight text-ink sm:text-2xl lg:text-3xl">Analytics</h1>
+        <p className="mt-1 text-sm text-muted sm:text-base">Resolution performance and reporting patterns.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Resolution rate" value={loading ? "…" : `${stats.rate}%`} icon={<TrendingUp className="h-5 w-5" />} tone="green" />
         <StatCard label="Avg. resolution time" value={loading || !stats.avg ? "—" : `${stats.avg.toFixed(1)} days`} icon={<Clock className="h-5 w-5" />} tone="blue" />
         <StatCard label="Total complaints" value={loading ? "…" : stats.total} icon={<FileText className="h-5 w-5" />} tone="brand" />
         <StatCard label="Resolved" value={loading ? "…" : stats.resolved} icon={<CheckCircle2 className="h-5 w-5" />} tone="red" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.7fr_1fr]">
+      <div className="grid gap-5 sm:gap-6 lg:grid-cols-[1.7fr_1fr]">
         <Card className="p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -220,7 +220,7 @@ export function AnalyticsPage() {
                   {i + 1}
                 </span>
                 <MapPin className="h-4 w-4 shrink-0 text-muted" aria-hidden />
-                <span className="w-32 shrink-0 font-mono text-sm font-medium text-ink">{h.area}</span>
+                <span className="w-24 shrink-0 font-mono text-xs font-medium text-ink sm:w-32 sm:text-sm">{h.area}</span>
                 <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-canvas">
                   <div
                     className="h-full rounded-full bg-brand transition-all duration-500"

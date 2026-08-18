@@ -57,16 +57,16 @@ function ComplaintDetailBody({ complaint }: { complaint: Complaint }) {
   const images = complaint.imageUrls ?? [];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+    <div className="grid gap-5 sm:gap-6 lg:grid-cols-[1.6fr_1fr]">
       <div className="space-y-6">
         {/* Main info */}
-        <Card className="p-6 sm:p-7">
+        <Card className="p-4 sm:p-6 lg:p-7">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-sm font-bold text-brand">{complaintCode(complaint.id)}</span>
             <StatusBadge status={complaint.status} />
             <PriorityBadge priority={complaint.priority} />
           </div>
-          <h1 className="mt-3 text-2xl font-bold tracking-tight text-ink">{complaint.title}</h1>
+          <h1 className="mt-3 text-xl font-bold tracking-tight text-ink sm:text-2xl">{complaint.title}</h1>
           <p className="mt-3 whitespace-pre-line text-[15px] leading-relaxed text-muted">
             {complaint.description}
           </p>
@@ -82,7 +82,7 @@ function ComplaintDetailBody({ complaint }: { complaint: Complaint }) {
           {complaint.resolutionProofImageUrl && (
             <div className="mt-5">
               <h2 className="text-base font-semibold text-ink">Resolution proof</h2>
-              <p className="mt-1 text-sm text-muted">Photo uploaded by the team when the issue was fixed.</p>
+              <p className="mt-1 text-sm text-muted">Photo of the completed fix, uploaded by the field team.</p>
               <a
                 href={complaint.resolutionProofImageUrl}
                 target="_blank"
@@ -130,8 +130,8 @@ function ComplaintDetailBody({ complaint }: { complaint: Complaint }) {
         )}
 
         {/* Timeline */}
-        <Card className="p-6">
-          <h2 className="mb-6 text-base font-semibold text-ink">Progress</h2>
+        <Card className="p-4 sm:p-6">
+          <h2 className="mb-4 text-base font-semibold text-ink sm:mb-6">Progress</h2>
           <ComplaintTimeline status={complaint.status} history={complaint.history} createdAt={complaint.createdAt} />
         </Card>
       </div>
@@ -176,7 +176,7 @@ function ComplaintDetailBody({ complaint }: { complaint: Complaint }) {
               <div>
                 <dt className="font-medium text-muted">Assigned to</dt>
                 <dd className="mt-0.5 font-medium text-ink">
-                  {complaint.assignedTo ? `Officer #${complaint.assignedTo}` : "Not assigned yet"}
+                  {complaint.assignedTo ? `Field Officer #${complaint.assignedTo}` : "Not yet assigned"}
                 </dd>
               </div>
             </div>
