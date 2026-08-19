@@ -21,6 +21,15 @@ public enum NotificationType {
     COMMUNITY_EVENT,         // Event published / citizen registered for an event
     ARTICLE,                 // New educational article published (future-ready)
 
+    NGO_APPLICATION_SUBMITTED,   // NGO submitted an application
+    NGO_APPLICATION_APPROVED,   // NGO application approved by admin
+    NGO_APPLICATION_REJECTED,   // NGO application rejected by admin
+    NGO_EVENT_SUBMITTED,        // NGO submitted an event for approval
+    NGO_EVENT_APPROVED,         // NGO event approved by admin
+    NGO_EVENT_REJECTED,         // NGO event rejected by admin
+    NGO_EVENT_USER_REGISTERED,  // Citizen registered for an NGO event
+    NGO_EVENT_CANCELLED,        // NGO event was cancelled
+
     SYSTEM,                  // System-level alerts
     ADMIN                    // Admin announcements (future-ready)
 }

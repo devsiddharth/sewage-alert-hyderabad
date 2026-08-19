@@ -35,6 +35,14 @@ export type NotificationType =
   | "EMAIL_VERIFIED"
   | "COMMUNITY_EVENT"
   | "ARTICLE"
+  | "NGO_APPLICATION_SUBMITTED"
+  | "NGO_APPLICATION_APPROVED"
+  | "NGO_APPLICATION_REJECTED"
+  | "NGO_EVENT_SUBMITTED"
+  | "NGO_EVENT_APPROVED"
+  | "NGO_EVENT_REJECTED"
+  | "NGO_EVENT_USER_REGISTERED"
+  | "NGO_EVENT_CANCELLED"
   | "SYSTEM"
   | "ADMIN";
 
@@ -54,7 +62,7 @@ export interface AppNotification {
   updatedAt: string;
 }
 
-export type Role = "CITIZEN" | "AUTHORITY" | "ADMIN" | "FIELD_OFFICER";
+export type Role = "CITIZEN" | "AUTHORITY" | "ADMIN" | "FIELD_OFFICER" | "NGO_REPRESENTATIVE";
 
 export interface AuthResponse {
   /** JWT — absent on register (accounts must verify their email before logging in). */
@@ -363,6 +371,150 @@ export const PRIORITY_META: Record<ComplaintPriority, { label: string; tone: "sl
   HIGH: { label: "High", tone: "red" },
   CRITICAL: { label: "Critical", tone: "red" },
 };
+
+// ---------------------------------------------------------------------------
+// NGO v2.0.0 types
+// ---------------------------------------------------------------------------
+
+export type NgoApplicationStatus = "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "SUSPENDED";
+
+export interface NgoOrganization {
+  id: number;
+  representativeUserId: number;
+  organizationName: string;
+  officialEmail: string;
+  officialPhone: string;
+  registrationNumber: string;
+  registrationDetails: string;
+  website: string;
+  address: string;
+  operatingAreas: string;
+  mission: string;
+  areasOfFocus: string;
+  communitiesServed: string;
+  contactPersonName: string;
+  contactPersonEmail: string;
+  contactPersonPhone: string;
+  supportingDocumentUrl: string | null;
+  logoUrl: string | null;
+  status: NgoApplicationStatus;
+  rejectionReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type EventApprovalStatus = "PENDING_APPROVAL" | "APPROVED" | "REJECTED" | "PUBLISHED" | "CANCELLED";
+
+export interface NgoEvent {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  eventDate: string;
+  endDate: string | null;
+  eventTime: string | null;
+  capacity: number | null;
+  category: string | null;
+  images: string | null;
+  ngoOrganizationId: number;
+  ngoOrganizationName: string;
+  approvalStatus: EventApprovalStatus;
+  rejectionReason: string | null;
+  registeredCount: number;
+  isRegisteredByCurrentUser: boolean;
+  createdAt: string;
+}
+
+export type DriveStatus = "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+
+export interface NgoDrive {
+  id: number;
+  title: string;
+  description: string;
+  driveType: string | null;
+  location: string;
+  startDate: string;
+  endDate: string | null;
+  ngoOrganizationId: number;
+  ngoOrganizationName: string;
+  status: DriveStatus;
+  images: string | null;
+  totalTarget: number | null;
+  currentParticipants: number;
+  progressNotes: string | null;
+  createdAt: string;
+}
+
+export interface NgoAchievement {
+  id: number;
+  title: string;
+  description: string | null;
+  date: string | null;
+  evidence: string | null;
+  images: string | null;
+  ngoOrganizationId: number;
+  createdAt: string;
+}
+
+export interface NgoProgress {
+  id: number;
+  ngoOrganizationId: number;
+  complaintsAddressed: number;
+  areasCovered: number;
+  drivesConducted: number;
+  eventsConducted: number;
+  volunteersInvolved: number;
+  peopleReached: number;
+  updatedAt: string;
+}
+
+export interface NgoFund {
+  id: number;
+  ngoOrganizationId: number;
+  source: string;
+  amount: number;
+  allocatedAmount: number | null;
+  remainingAmount: number | null;
+  projectName: string | null;
+  description: string | null;
+  receivedDate: string;
+  supportingDocumentUrl: string | null;
+  createdAt: string;
+}
+
+export interface NgoExpense {
+  id: number;
+  fundRecordId: number;
+  ngoOrganizationId: number;
+  category: string;
+  amount: number;
+  description: string | null;
+  expenseDate: string;
+  supportingDocumentUrl: string | null;
+  createdAt: string;
+}
+
+export interface NgoDashboard {
+  organization: NgoOrganization;
+  progress: NgoProgress | null;
+  totalEvents: number;
+  pendingEvents: number;
+  publishedEvents: number;
+  totalDrives: number;
+  totalAchievements: number;
+  totalParticipants: number;
+  totalFundsReceived: number | null;
+  totalExpenses: number | null;
+  remainingBalance: number | null;
+}
+
+export interface NgoParticipant {
+  userId: number;
+  name: string;
+  email: string;
+  registrationStatus: string;
+  attendanceStatus: string | null;
+}
 
 // ---------------------------------------------------------------------------
 // Complaint hotspot heatmap (admin)

@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import {
   BarChart3,
   Building2,
+  CalendarCheck,
   CalendarDays,
   Droplets,
   FileText,
@@ -28,6 +29,7 @@ export function AdminLayout() {
     { to: "/admin/analytics", label: "Analytics", icon: <BarChart3 className="h-4 w-4" /> },
     { to: "/admin/community/events", label: "Events", icon: <CalendarDays className="h-4 w-4" /> },
     { to: "/admin/community/articles", label: "Articles", icon: <FileText className="h-4 w-4" /> },
+    { to: "/admin/ngo-applications", label: "NGO Applications", icon: <CalendarCheck className="h-4 w-4" /> },
     { to: "/admin/community/ngos", label: "NGOs", icon: <HeartHandshake className="h-4 w-4" /> },
     { to: "/admin/community/plants", label: "Treatment plants", icon: <Droplets className="h-4 w-4" /> },
     { to: "/admin/community/pipelines", label: "Pipelines", icon: <GitBranch className="h-4 w-4" /> },

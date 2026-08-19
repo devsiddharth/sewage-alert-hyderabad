@@ -74,6 +74,7 @@ export function complaintCode(id: number): string {
 export function homePathFor(role: string | null | undefined): string {
   if (role === "FIELD_OFFICER") return "/officer";
   if (role === "ADMIN" || role === "AUTHORITY") return "/admin";
+  if (role === "NGO_REPRESENTATIVE") return "/ngo";
   return "/dashboard";
 }
 

@@ -41,19 +41,30 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                     event.getEventId());
             return;
         }
-        if (!isConfigured()) {
-            log.warn("EmailJS not configured — skipping verification email for eventId {} "
-                            + "(set EMAILJS_SERVICE_ID / EMAILJS_TEMPLATE_ID / EMAILJS_PUBLIC_KEY / EMAILJS_PRIVATE_KEY)",
-                    event.getEventId());
-            return;
-        }
-
         // OTP-only verification: the email renders the 6-digit code with {{verification_code}}
         // (see notification-service/EMAILJS-WELCOME-TEMPLATE.md). No verification link is sent.
         Map<String, Object> params = new HashMap<>();
         params.put("name", name);
         params.put("email", email);
         params.put("verification_code", code);
+
+        if (!isConfigured()) {
+            // Local development fallback: log the email to console so developers can see
+            // what would be sent without needing EmailJS credentials.
+            log.warn("═══════════════════════════════════════════════════════════════");
+            log.warn("📧 EmailJS NOT configured — logging email to console (LOCAL DEV MODE)");
+            log.warn("═══════════════════════════════════════════════════════════════");
+            log.warn("TO:      {}", email);
+            log.warn("NAME:    {}", name);
+            log.warn("CODE:    {}", code);
+            log.warn("EVENT:   {}", event.getEventId());
+            log.warn("═══════════════════════════════════════════════════════════════");
+            log.warn("To enable real emails, set these environment variables:");
+            log.warn("  EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID,");
+            log.warn("  EMAILJS_PUBLIC_KEY, EMAILJS_PRIVATE_KEY");
+            log.warn("═══════════════════════════════════════════════════════════════");
+            return;
+        }
 
         try {
             emailJsClient.send(emailJsProperties.getTemplateId(), params);
@@ -77,11 +88,6 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
                     event.getEventId());
             return;
         }
-        if (!isConfigured()) {
-            log.warn("EmailJS not configured — skipping welcome email for eventId {}", event.getEventId());
-            return;
-        }
-
         Map<String, Object> metadata = event.getMetadata();
         String name = stringValue(metadata, "name");
         String email = stringValue(metadata, "email");
@@ -91,6 +97,19 @@ public class EmailNotificationServiceImpl implements EmailNotificationService {
         params.put("email", email != null ? email : "");
         // CTA link for the welcome email's "Sign in" button — built from FRONTEND_URL
         params.put("login_url", appProperties.getFrontendUrl() + "/login");
+
+        if (!isConfigured()) {
+            // Local development fallback: log the email to console
+            log.warn("═══════════════════════════════════════════════════════════════");
+            log.warn("📧 EmailJS NOT configured — logging welcome email to console (LOCAL DEV MODE)");
+            log.warn("═══════════════════════════════════════════════════════════════");
+            log.warn("TO:      {}", email);
+            log.warn("NAME:    {}", name);
+            log.warn("LOGIN:   {}", appProperties.getFrontendUrl() + "/login");
+            log.warn("EVENT:   {}", event.getEventId());
+            log.warn("═══════════════════════════════════════════════════════════════");
+            return;
+        }
 
         try {
             emailJsClient.send(welcomeTemplateId, params);

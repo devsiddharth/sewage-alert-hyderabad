@@ -35,6 +35,18 @@ export function RequireFieldOfficer({ children }: { children: React.ReactNode })
   return <>{children}</>;
 }
 
+export function RequireNgoRepresentative({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isNgoRepresentative, user } = useAuth();
+  const location = useLocation();
+  if (!isAuthenticated) {
+    return <Navigate to="/ngo/login" state={{ from: location.pathname }} replace />;
+  }
+  if (!isNgoRepresentative) {
+    return <Navigate to={homePathFor(user?.role)} replace />;
+  }
+  return <>{children}</>;
+}
+
 export function RedirectIfAuthed({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   if (isAuthenticated) {

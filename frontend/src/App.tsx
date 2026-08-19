@@ -24,6 +24,7 @@ import { Notifications } from "@/pages/dashboard/Notifications";
 import { Profile } from "@/pages/dashboard/Profile";
 
 import { AdminLayout } from "@/pages/admin/AdminLayout";
+import { AdminNgoApplications } from "@/pages/admin/AdminNgoApplications";
 import { AdminProfile } from "@/pages/admin/AdminProfile";
 import { HotspotMapPage } from "@/pages/admin/HotspotMapPage";
 import { AdminDashboard } from "@/pages/admin/AdminDashboard";
@@ -40,6 +41,20 @@ import { LakesPage } from "@/pages/admin/community/Lakes";
 import { FieldOfficerLayout } from "@/pages/officer/FieldOfficerLayout";
 import { AssignedComplaints } from "@/pages/officer/AssignedComplaints";
 import { FieldOfficerComplaintDetail } from "@/pages/officer/ComplaintDetailPage";
+
+import { NgoLayout } from "@/pages/ngo/NgoLayout";
+import { NgoLogin } from "@/pages/ngo/NgoLogin";
+import { NgoApply } from "@/pages/ngo/NgoApply";
+import { NgoDashboardPage } from "@/pages/ngo/NgoDashboard";
+import { NgoProfile } from "@/pages/ngo/NgoProfile";
+import { NgoEvents } from "@/pages/ngo/NgoEvents";
+import { NgoDrives } from "@/pages/ngo/NgoDrives";
+import { NgoAchievements } from "@/pages/ngo/NgoAchievements";
+import { NgoProgressPage } from "@/pages/ngo/NgoProgress";
+import { NgoFunds } from "@/pages/ngo/NgoFunds";
+import { NgoParticipants } from "@/pages/ngo/NgoParticipants";
+import { MyEventsPage } from "@/pages/dashboard/MyEvents";
+import { RequireNgoRepresentative } from "@/components/layout/RouteGuards";
 
 export default function App() {
   return (
@@ -80,8 +95,22 @@ export default function App() {
               <Route path="/articles" element={<PublicArticlesPage />} />
               <Route path="/ngos" element={<PublicNgosPage />} />
               <Route path="/lakes" element={<PublicLakesPage />} />
-              <Route path="/infrastructure" element={<InfrastructurePage />} />
-            </Route>
+            <Route path="/infrastructure" element={<InfrastructurePage />} />
+          </Route>
+
+            {/* NGO public routes */}
+            <Route
+              path="/ngo/login"
+              element={
+                <RedirectIfAuthed>
+                  <NgoLogin />
+                </RedirectIfAuthed>
+              }
+            />
+            <Route
+              path="/ngo/apply"
+              element={<NgoApply />}
+            />
 
             {/* Citizen dashboard */}
             <Route
@@ -96,6 +125,7 @@ export default function App() {
               <Route path="report" element={<ReportIssue />} />
               <Route path="complaints" element={<MyComplaints />} />
               <Route path="complaints/:id" element={<ComplaintDetailPage />} />
+              <Route path="my-events" element={<MyEventsPage />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
             </Route>
@@ -131,12 +161,32 @@ export default function App() {
               <Route path="complaints" element={<ManageComplaints />} />
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="ngo-applications" element={<AdminNgoApplications />} />
               <Route path="community/events" element={<EventsPage />} />
               <Route path="community/articles" element={<ArticlesPage />} />
               <Route path="community/ngos" element={<NgosPage />} />
               <Route path="community/plants" element={<PlantsPage />} />
               <Route path="community/pipelines" element={<PipelinesPage />} />
               <Route path="community/lakes" element={<LakesPage />} />
+            </Route>
+
+            {/* NGO dashboard */}
+            <Route
+              path="/ngo"
+              element={
+                <RequireNgoRepresentative>
+                  <NgoLayout />
+                </RequireNgoRepresentative>
+              }
+            >
+              <Route index element={<NgoDashboardPage />} />
+              <Route path="profile" element={<NgoProfile />} />
+              <Route path="events" element={<NgoEvents />} />
+              <Route path="drives" element={<NgoDrives />} />
+              <Route path="achievements" element={<NgoAchievements />} />
+              <Route path="progress" element={<NgoProgressPage />} />
+              <Route path="funds" element={<NgoFunds />} />
+              <Route path="participants" element={<NgoParticipants />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

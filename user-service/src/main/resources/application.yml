@@ -30,6 +30,8 @@ spring:
 
 # Eureka Client Configuration
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/  # Points to the Eureka Server running on port 8761
