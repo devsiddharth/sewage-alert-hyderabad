@@ -344,6 +344,16 @@ export function Register() {
           <ArrowRight className="ml-0.5 inline h-3.5 w-3.5" aria-hidden />
         </Link>
       </p>
+
+      <div className="mt-4 rounded-xl border border-dashed border-brand/30 bg-brand/5 px-4 py-3 text-center text-sm">
+        <p className="text-muted">
+          Are you an NGO?{' '}
+          <Link to="/ngo/apply" className="font-semibold text-brand hover:underline">
+            Apply as an NGO
+            <ArrowRight className="ml-0.5 inline h-3.5 w-3.5" aria-hidden />
+          </Link>
+        </p>
+      </div>
     </AuthLayout>
   );
 }

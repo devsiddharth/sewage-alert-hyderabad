@@ -76,7 +76,31 @@ spring:
           uri: lb://COMMUNITY-SERVICE
           predicates:
             - Path=/api/v1/lakes/**
-#
+
+        # Community Service — NGO Organization: Application, verification, dashboard
+        - id: community-service-ngo
+          uri: lb://COMMUNITY-SERVICE
+          predicates:
+            - Path=/api/v1/ngo/**
+
+        # Community Service — NGO Events: Event management, approval, registration
+        - id: community-service-ngo-events
+          uri: lb://COMMUNITY-SERVICE
+          predicates:
+            - Path=/api/v1/ngo/events/**
+
+        # Community Service — NGO Drives: Drive management and participation
+        - id: community-service-ngo-drives
+          uri: lb://COMMUNITY-SERVICE
+          predicates:
+            - Path=/api/v1/ngo/drives/**
+
+        # Community Service — NGO Transparency: Achievements, progress, funds, expenses
+        - id: community-service-ngo-transparency
+          uri: lb://COMMUNITY-SERVICE
+          predicates:
+            - Path=/api/v1/ngo/transparency/**
+
         # Notification Service: Consumes RabbitMQ events and serves in-app notifications
         - id: notification-service
           uri: lb://NOTIFICATION-SERVICE
@@ -84,6 +108,8 @@ spring:
             - Path=/api/v1/notifications/**
 
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
