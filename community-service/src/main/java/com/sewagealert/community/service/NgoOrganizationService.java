@@ -13,6 +13,9 @@ public interface NgoOrganizationService {
     // Submit a new NGO application (any authenticated user can apply)
     NgoOrganizationResponse submitApplication(Long userId, NgoApplicationRequest request);
 
+    // Submit a public NGO application (no login required)
+    NgoOrganizationResponse submitPublicApplication(NgoApplicationRequest request);
+
     // Get the NGO organization for a representative user
     NgoOrganizationResponse getMyOrganization(Long userId);
 

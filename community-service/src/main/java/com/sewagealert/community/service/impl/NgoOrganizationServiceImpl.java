@@ -1,5 +1,6 @@
 package com.sewagealert.community.service.impl;
 
+import com.sewagealert.community.client.AuthServiceClient;
 import com.sewagealert.community.dto.*;
 import com.sewagealert.community.exception.ForbiddenException;
 import com.sewagealert.community.model.NgoApplicationStatus;
@@ -11,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -30,6 +33,7 @@ public class NgoOrganizationServiceImpl implements NgoOrganizationService {
     private final NgoExpenseRecordRepository expenseRepository;
     private final NgoEventRegistrationRepository eventRegistrationRepository;
     private final NgoDriveParticipationRepository driveParticipationRepository;
+    private final AuthServiceClient authServiceClient;
 
     @Override
     @Transactional
@@ -62,6 +66,47 @@ public class NgoOrganizationServiceImpl implements NgoOrganizationService {
 
         org = ngoRepository.save(org);
         log.info("NGO application submitted — orgId={}, userId={}", org.getId(), userId);
+
+        return NgoOrganizationResponse.fromEntity(org);
+    }
+
+    @Override
+    @Transactional
+    public NgoOrganizationResponse submitPublicApplication(NgoApplicationRequest request) {
+        // Prevent duplicate applications by official email
+        if (ngoRepository.existsByOfficialEmail(request.getOfficialEmail())) {
+            throw new RuntimeException("An NGO application with this email already exists.");
+        }
+        String regNum = (request.getRegistrationNumber() != null && !request.getRegistrationNumber().isBlank()) ? request.getRegistrationNumber() : null;
+        if (regNum != null && ngoRepository.existsByRegistrationNumber(regNum)) {
+            throw new RuntimeException("An NGO with this registration number already exists.");
+        }
+
+        NgoOrganization org = new NgoOrganization();
+        // representativeUserId is null — will be set when admin approves and creates the account
+        org.setOrganizationName(request.getOrganizationName());
+        org.setOfficialEmail(request.getOfficialEmail());
+        org.setOfficialPhone(request.getOfficialPhone());
+        org.setRegistrationNumber(regNum);
+        org.setRegistrationDetails(request.getRegistrationDetails());
+        org.setWebsite(request.getWebsite());
+        org.setAddress(request.getAddress());
+        org.setOperatingAreas(request.getOperatingAreas());
+        org.setMission(request.getMission());
+        org.setAreasOfFocus(request.getAreasOfFocus());
+        org.setCommunitiesServed(request.getCommunitiesServed());
+        org.setContactPersonName(request.getContactPersonName());
+        org.setContactPersonEmail(request.getContactPersonEmail());
+        org.setContactPersonPhone(request.getContactPersonPhone());
+        org.setStatus(NgoApplicationStatus.PENDING);
+
+        // Hash and store the password the applicant set
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            org.setLoginPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
+        }
+
+        org = ngoRepository.save(org);
+        log.info("Public NGO application submitted — orgId={}, email={}", org.getId(), org.getOfficialEmail());
 
         return NgoOrganizationResponse.fromEntity(org);
     }
@@ -184,6 +229,30 @@ public class NgoOrganizationServiceImpl implements NgoOrganizationService {
         }
         org.setStatus(NgoApplicationStatus.APPROVED);
         org.setRejectionReason(null);
+
+        // If this was a public application (no user account yet), create one now
+        if (org.getRepresentativeUserId() == null) {
+            try {
+                String phone = org.getContactPersonPhone() != null ? org.getContactPersonPhone() : org.getOfficialPhone();
+                CreateNgoUserRequest userReq = new CreateNgoUserRequest(
+                        org.getContactPersonName() != null ? org.getContactPersonName() : org.getOrganizationName(),
+                        org.getContactPersonEmail() != null ? org.getContactPersonEmail() : org.getOfficialEmail(),
+                        phone,
+                        org.getLoginPassword()  // pre-set password from application
+                );
+                ApiResponse<CreateNgoUserResponse> userRes = authServiceClient.createNgoUser(userReq);
+                if (userRes.isSuccess() && userRes.getData() != null) {
+                    org.setRepresentativeUserId(userRes.getData().getUserId());
+                    log.info("NGO user account created — orgId={}, userId={}, tempPassword={}",
+                            org.getId(), userRes.getData().getUserId(), userRes.getData().getTemporaryPassword());
+                }
+            } catch (Exception ex) {
+                log.error("Failed to create NGO user account for orgId={}", org.getId(), ex);
+                // Approval still succeeds — admin can create the account manually later
+                // Approval still succeeds — admin can create the account manually later
+            }
+        }
+
         org = ngoRepository.save(org);
 
         // Initialize progress record

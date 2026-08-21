@@ -4,12 +4,10 @@ import { ArrowLeft, HeartHandshake, Send, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Input, Textarea } from "@/components/ui/Field";
-import { useAuth } from "@/lib/auth";
 import { api, ApiError } from "@/lib/api";
 import { useToast } from "@/lib/toast";
 
 export function NgoApply() {
-  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -31,6 +29,8 @@ export function NgoApply() {
     contactPersonName: "",
     contactPersonEmail: "",
     contactPersonPhone: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const update = (field: string, value: string) => setForm((f) => ({ ...f, [field]: value }));
@@ -39,19 +39,23 @@ export function NgoApply() {
     e.preventDefault();
     setError(null);
 
-    if (!isAuthenticated) {
-      setError("Please sign in first to submit an NGO application.");
-      return;
-    }
-
     if (!form.organizationName || !form.officialEmail) {
       setError("Organization name and official email are required.");
+      return;
+    }
+    if (!form.password || form.password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
       return;
     }
 
     setLoading(true);
     try {
-      await api.post("/api/v1/ngo/apply", form);
+      const { confirmPassword: _, ...submitData } = form;
+      await api.post("/api/v1/ngo/apply/public", submitData);
       setSubmitted(true);
       toast("success", "Application submitted!", "Your NGO application has been submitted for admin review.");
     } catch (err) {
@@ -70,7 +74,7 @@ export function NgoApply() {
               <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
               <h1 className="mt-4 text-2xl font-bold text-ink">Application Submitted!</h1>
               <p className="mt-2 text-muted">
-                Your NGO application has been submitted for admin review. You&apos;ll be notified once your application is approved.
+                Your NGO application has been submitted for admin review. Once approved, you will receive login credentials via email to access your NGO dashboard.
               </p>
               <Button className="mt-6" onClick={() => navigate("/")} icon={<ArrowLeft className="h-4 w-4" />}>
                 Back to Home
@@ -99,11 +103,9 @@ export function NgoApply() {
             Submit your organization details for verification. Once approved by an administrator, you&apos;ll gain access to the NGO dashboard.
           </p>
 
-          {!isAuthenticated && (
-            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              You need to <Link to="/login" className="font-semibold underline">sign in</Link> before submitting an application.
-            </div>
-          )}
+          <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            No account needed — submit your details below. After admin approval, you&apos;ll receive login credentials via email.
+          </div>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             {error && (
@@ -174,7 +176,20 @@ export function NgoApply() {
               </div>
             </Card>
 
-            <Button type="submit" size="lg" fullWidth loading={loading} disabled={!isAuthenticated} icon={<Send className="h-4 w-4" />}>
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold text-ink mb-4">Account Security</h2>
+              <p className="text-sm text-muted mb-4">Set a password for your NGO dashboard. You&apos;ll use this to log in after your application is approved.</p>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Password" required>
+                  <Input type="password" value={form.password} onChange={(e) => update("password", e.target.value)} placeholder="Min. 6 characters" />
+                </Field>
+                <Field label="Confirm Password" required>
+                  <Input type="password" value={form.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} placeholder="Repeat password" />
+                </Field>
+              </div>
+            </Card>
+
+            <Button type="submit" size="lg" fullWidth loading={loading} icon={<Send className="h-4 w-4" />}>
               Submit Application
             </Button>
           </form>

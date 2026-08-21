@@ -8,6 +8,7 @@ export function Modal({
   title,
   description,
   children,
+  footer,
   size = "md",
 }: {
   open: boolean;
@@ -15,7 +16,8 @@ export function Modal({
   title: string;
   description?: string;
   children: ReactNode;
-  size?: "sm" | "md" | "lg";
+  footer?: ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -67,7 +69,8 @@ export function Modal({
           "relative w-full rounded-t-3xl bg-white shadow-lift outline-none animate-fade-in sm:rounded-3xl",
           size === "sm" && "sm:max-w-md",
           size === "md" && "sm:max-w-lg",
-          size === "lg" && "sm:max-w-3xl"
+          size === "lg" && "sm:max-w-3xl",
+          size === "xl" && "sm:max-w-[56rem]"
         )}
       >
         <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
@@ -84,6 +87,9 @@ export function Modal({
           </button>
         </div>
         <div className="max-h-[70vh] overflow-y-auto px-6 py-5">{children}</div>
+        {footer && (
+          <div className="border-t border-line px-6 py-4 bg-canvas/50 rounded-b-3xl">{footer}</div>
+        )}
       </div>
     </div>
   );

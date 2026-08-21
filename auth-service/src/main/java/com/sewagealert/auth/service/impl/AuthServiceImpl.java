@@ -2,6 +2,8 @@ package com.sewagealert.auth.service.impl;
 
 import com.sewagealert.auth.client.UserServiceClient;
 import com.sewagealert.auth.dto.AuthResponse;
+import com.sewagealert.auth.dto.CreateNgoUserRequest;
+import com.sewagealert.auth.dto.CreateNgoUserResponse;
 import com.sewagealert.auth.dto.CreateUserProfileRequest;
 import com.sewagealert.auth.dto.FieldOfficerResponse;
 import com.sewagealert.auth.dto.LoginRequest;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -181,5 +184,67 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
         return UserRoleResponse.fromEntity(user);
+    }
+
+    @Override
+    public CreateNgoUserResponse createNgoUser(CreateNgoUserRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new EmailAlreadyExistsException("Email already registered: " + request.getEmail());
+        }
+
+        // Use pre-set password from application, or generate one
+        String plainPassword;
+        String encodedPassword;
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            // Password was already BCrypt-hashed by community-service — decode and re-encode
+            // to keep the User constructor happy (it expects plain text for encoding)
+            plainPassword = "[pre-set]";  // not used for login — the hash is passed directly
+            encodedPassword = request.getPassword();  // already BCrypt-hashed
+        } else {
+            plainPassword = generateTemporaryPassword();
+            encodedPassword = passwordEncoder.encode(plainPassword);
+        }
+
+        Long phoneNum = null;
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            try {
+                phoneNum = Long.parseLong(request.getPhone().trim());
+            } catch (NumberFormatException ignored) {
+                // non-numeric phone — store as null
+            }
+        }
+
+        User user = new User(
+                request.getName(),
+                request.getEmail(),
+                encodedPassword,
+                phoneNum,
+                Role.NGO_REPRESENTATIVE
+        );
+        user.setEmailVerified(true);
+        user = userRepository.save(user);
+
+        log.info("NGO user account created — userId={}, email={}", user.getId(), user.getEmail());
+
+        // For pre-set passwords, return a note instead of the password
+        String returnedPassword = (request.getPassword() != null && !request.getPassword().isBlank())
+                ? null  // password was pre-set, not generated
+                : plainPassword;
+        return new CreateNgoUserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                returnedPassword
+        );
+    }
+
+    private String generateTemporaryPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }
