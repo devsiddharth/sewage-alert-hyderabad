@@ -26,8 +26,8 @@ public class NgoOrganization {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "representative_user_id", nullable = false, unique = true)
-    private Long representativeUserId;  // auth-service user id of the NGO representative
+    @Column(name = "representative_user_id", unique = true)
+    private Long representativeUserId;  // auth-service user id — null for public applications until approved
 
     @Column(name = "organization_name", nullable = false)
     private String organizationName;
@@ -70,6 +70,9 @@ public class NgoOrganization {
 
     @Column(name = "contact_person_phone")
     private String contactPersonPhone;
+
+    @Column(name = "login_password", length = 255)
+    private String loginPassword;  // BCrypt-hashed password set by applicant during application
 
     @Column(name = "supporting_document_url")
     private String supportingDocumentUrl;  // Cloudinary URL

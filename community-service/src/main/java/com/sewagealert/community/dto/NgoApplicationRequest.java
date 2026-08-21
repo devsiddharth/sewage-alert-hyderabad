@@ -56,4 +56,7 @@ public class NgoApplicationRequest {
 
     @Schema(description = "Representative phone")
     private String contactPersonPhone;
+
+    @Schema(description = "Password for the NGO login account (set by applicant, used on approval)")
+    private String password;
 }

@@ -13,5 +13,6 @@ public interface NgoOrganizationRepository extends JpaRepository<NgoOrganization
     Optional<NgoOrganization> findByRegistrationNumber(String registrationNumber);
     boolean existsByRegistrationNumber(String registrationNumber);
     boolean existsByRepresentativeUserId(Long userId);
+    boolean existsByOfficialEmail(String officialEmail);
     List<NgoOrganization> findByStatus(com.sewagealert.community.model.NgoApplicationStatus status);
 }

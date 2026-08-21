@@ -1,6 +1,8 @@
 package com.sewagealert.auth.controller;
 
 import com.sewagealert.auth.dto.ApiResponse;
+import com.sewagealert.auth.dto.CreateNgoUserRequest;
+import com.sewagealert.auth.dto.CreateNgoUserResponse;
 import com.sewagealert.auth.dto.UserRoleResponse;
 import com.sewagealert.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,5 +43,23 @@ public class AuthInternalController {
         UserRoleResponse response = authService.getUserRoleInfo(userId);
         return ResponseEntity
                 .ok(ApiResponse.success("User role retrieved successfully", response));
+    }
+
+    @PostMapping("/ngo-users")
+    @Operation(
+            summary = "Create an NGO user account (internal)",
+            description = "Called by community-service when an NGO application is approved. "
+                    + "Creates a user with NGO_REPRESENTATIVE role and a generated password. "
+                    + "Returns the password so it can be emailed to the NGO."
+    )
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "NGO user created"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Email already exists")
+    })
+    public ResponseEntity<ApiResponse<CreateNgoUserResponse>> createNgoUser(
+            @RequestBody CreateNgoUserRequest request) {
+        CreateNgoUserResponse response = authService.createNgoUser(request);
+        return ResponseEntity.status(201)
+                .body(ApiResponse.success("NGO user account created", response));
     }
 }

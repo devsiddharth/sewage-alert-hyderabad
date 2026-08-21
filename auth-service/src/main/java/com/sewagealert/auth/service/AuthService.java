@@ -1,6 +1,8 @@
 package com.sewagealert.auth.service;
 
 import com.sewagealert.auth.dto.AuthResponse;
+import com.sewagealert.auth.dto.CreateNgoUserRequest;
+import com.sewagealert.auth.dto.CreateNgoUserResponse;
 import com.sewagealert.auth.dto.FieldOfficerResponse;
 import com.sewagealert.auth.dto.LoginRequest;
 import com.sewagealert.auth.dto.RegisterRequest;
@@ -31,5 +33,9 @@ public interface AuthService {
     // getUserRoleInfo: Returns a user's identity + role — consumed internally by other
     // microservices for server-side role verification. 404 if the user does not exist.
     UserRoleResponse getUserRoleInfo(Long userId);
+
+    // createNgoUser: Creates a user account with NGO_REPRESENTATIVE role when an NGO
+    // application is approved. Returns the generated password (sent once via email).
+    CreateNgoUserResponse createNgoUser(CreateNgoUserRequest request);
 
 }

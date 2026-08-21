@@ -29,6 +29,20 @@ public class NgoOrganizationController {
         this.ngoService = ngoService;
     }
 
+    // ---- Public endpoints (no auth required) ----
+
+    @PostMapping("/apply/public")
+    @Operation(summary = "Submit NGO application (public)", description = "Public endpoint — no login required. NGOs apply here, admin reviews and creates their account.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Application submitted"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation error or duplicate application")
+    })
+    public ResponseEntity<ApiResponse<NgoOrganizationResponse>> applyPublic(
+            @Valid @RequestBody NgoApplicationRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Application submitted", ngoService.submitPublicApplication(request)));
+    }
+
     // ---- NGO Representative endpoints ----
 
     @PostMapping("/apply")
