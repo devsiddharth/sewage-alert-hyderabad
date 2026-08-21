@@ -107,6 +107,12 @@ spring:
           predicates:
             - Path=/api/v1/notifications/**
 
+        # AI Service: AI assistant, intent detection, data grounding, content generation
+        - id: ai-service
+          uri: lb://AI-SERVICE
+          predicates:
+            - Path=/api/v1/ai/**
+
 eureka:
   instance:
     prefer-ip-address: true
