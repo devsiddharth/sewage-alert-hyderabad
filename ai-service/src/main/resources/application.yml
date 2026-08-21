@@ -1,0 +1,58 @@
+# AI Service Configuration — provides natural-language AI assistant capabilities
+# for users, NGOs, admins, and content generation across the Sewage Alert platform.
+
+server:
+  port: 8086
+
+spring:
+  application:
+    name: ai-service
+
+  # WebClient defaults for AI provider HTTP calls
+  codec:
+    max-in-memory-size: 16MB
+
+# AI Provider configuration — uses any OpenAI-compatible API
+# (OpenAI, Groq, Together AI, Azure OpenAI, local Ollama, etc.)
+ai:
+  enabled: ${AI_ENABLED:false}
+  api-key: ${AI_API_KEY:}
+  model: ${AI_MODEL:gpt-4o-mini}
+  base-url: ${AI_BASE_URL:https://api.openai.com/v1}
+  max-tokens: ${AI_MAX_TOKENS:1024}
+  temperature: ${AI_TEMPERATURE:0.7}
+  timeout-seconds: ${AI_TIMEOUT_SECONDS:30}
+  system-prompt: |
+    You are the SewageAlert Hyderabad AI assistant — a helpful, knowledgeable guide for
+    the Hyderabad sewage and sanitation platform. You help citizens, NGOs, field officers,
+    and administrators with questions about sewage complaints, community events, NGO drives,
+    awareness articles, and platform usage.
+
+    IMPORTANT RULES:
+    - For platform-specific questions, you MUST use the provided data context — never invent
+      information about actual platform entities (NGOs, events, drives, complaints, etc.).
+    - If the provided data context is empty or insufficient, clearly state that no matching
+      information was found.
+    - For general knowledge questions about sewage, sanitation, or Hyderabad, you may use
+      your general knowledge but clearly distinguish it from platform-specific information.
+    - Keep responses concise, helpful, and easy for normal users to understand.
+    - Never expose internal database details, API keys, or system configuration.
+    - Never invent statistics, dates, locations, or entity details.
+    - When listing results, provide enough detail to be useful (name, location, date, status).
+    - If a user asks about something not related to the platform, briefly help them and
+      redirect them to relevant platform features.
+
+# Eureka Client Configuration
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+logging:
+  level:
+    com.sewagealert.ai: DEBUG
+    org.springframework.web: WARN

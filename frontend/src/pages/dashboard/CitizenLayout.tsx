@@ -1,5 +1,6 @@
-import { Bell, CalendarDays, FileText, Globe, Home, Plus, Search, UserRound } from "lucide-react";
+import { Bell, Bot, CalendarDays, FileText, Globe, Home, Plus, Search, UserRound } from "lucide-react";
 import { AppShell, type NavItem } from "@/components/layout/AppShell";
+import { AiAssistant } from "@/components/ai/AiAssistant";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export function CitizenLayout() {
@@ -12,6 +13,7 @@ export function CitizenLayout() {
     { to: "/dashboard/complaints", label: "My Complaints", icon: <FileText className="h-4 w-4" /> },
     { to: "/dashboard/my-events", label: "My Events", icon: <CalendarDays className="h-4 w-4" /> },
     { to: "/dashboard/notifications", label: "Notifications", icon: <Bell className="h-4 w-4" />, badge: unread },
+    { to: "/dashboard/ai", label: "AI Assistant", icon: <Bot className="h-4 w-4" /> },
     { to: "/track", label: "Track Complaint", icon: <Search className="h-4 w-4" /> },
   ];
 
@@ -19,5 +21,10 @@ export function CitizenLayout() {
     { to: "/dashboard/profile", label: "Profile", icon: <UserRound className="h-4 w-4" /> },
   ];
 
-  return <AppShell navItems={nav} footerItems={footer} accent="citizen" />;
+  return (
+    <>
+      <AppShell navItems={nav} footerItems={footer} accent="citizen" />
+      <AiAssistant mode="user" compact />
+    </>
+  );
 }

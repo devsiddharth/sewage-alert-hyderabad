@@ -30,11 +30,23 @@ The platform enables users to:
                         ▼
                 Eureka Discovery Server (:8761)
                         │
- ┌──────────────┬──────────────┬──────────────┬──────────────┐
- ▼            ▼              ▼              ▼              ▼
-Auth Service  User Service  Complaint Service  Community Service  Notification Service
-        │             ▲              │
-        └────Feign────┘              │ (publishes events)
+ ┌──────────┬──────────┬──────────┬──────────┬──────────┐
+ ▼          ▼          ▼          ▼          ▼          ▼
+Auth      User     Complaint  Community  Notification  AI
+Service   Service  Service    Service    Service     Service
+        │             ▲          ▲                       │
+        └────Feign────┘          │ (Feign)              │
+                          ┌──────┴──────┐        ┌──────┴──────┐
+                          │  Community  │        │  Complaint  │
+                          │  Internal   │        │  Internal   │
+                          │  AI Data    │        │  AI Data    │
+                          └──────┬──────┘        └──────┬──────┘
+                                 │                       │
+                          ┌──────▼───────────────────────▼──────┐
+                          │          AI Service (:8086)          │
+                          │  Intent Detection → Data Grounding   │
+                          │  → OpenAI-Compatible API → Response  │
+                          └─────────────────────────────────────┘
                           ┌──────────▼──────────┐
                           │   RabbitMQ (AMQP)   │
                           │ notification.exchange│
@@ -60,6 +72,7 @@ Auth Service  User Service  Complaint Service  Community Service  Notification S
 - Hibernate
 - JWT Authentication
 - RabbitMQ (Spring AMQP) — event-driven notifications
+- Spring WebFlux (WebClient) — AI provider HTTP calls
 
 ## Database
 
@@ -183,6 +196,65 @@ Database
 
 ---
 
+## ✅ AI Service (v2.1.0)
+
+Responsibilities
+
+- Natural-language AI assistant for platform users
+- Intent detection and query classification
+- Grounded data retrieval from platform services
+- OpenAI-compatible AI provider integration
+- Article draft generation
+- Complaint insights and analytics
+- NGO activity summaries
+- Admin platform-wide analytics
+
+Features
+
+- Keyword-based intent detection (no AI call needed)
+- Data grounding — retrieves platform data before AI generation
+- Role-based authorization (Citizen, NGO, Admin)
+- Configurable AI provider (OpenAI, Groq, Together AI, Ollama, etc.)
+- Graceful degradation when AI is disabled
+- Hallucination prevention — AI answers from actual platform data
+- Floating chat widget for all authenticated dashboards
+
+AI Configuration
+
+| Variable | Description | Default |
+|----------|-------------|--------|
+| `AI_ENABLED` | Master toggle for AI features | `false` |
+| `AI_API_KEY` | API key for OpenAI-compatible provider | *(empty)* |
+| `AI_MODEL` | Model identifier (e.g., `gpt-4o-mini`) | `gpt-4o-mini` |
+| `AI_BASE_URL` | Base URL of the AI API | `https://api.openai.com/v1` |
+| `AI_MAX_TOKENS` | Max tokens for AI response | `1024` |
+| `AI_TEMPERATURE` | Response temperature (0.0-1.0) | `0.7` |
+| `AI_TIMEOUT_SECONDS` | HTTP timeout for AI calls | `30` |
+
+API Endpoints
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| POST | `/api/v1/ai/chat` | Unified AI chat | Any user |
+| POST | `/api/v1/ai/user/query` | User AI assistant | Any user |
+| POST | `/api/v1/ai/ngo/query` | NGO AI assistant | NGO Rep |
+| POST | `/api/v1/ai/admin/query` | Admin AI assistant | Admin |
+| POST | `/api/v1/ai/articles/generate` | Generate article draft | Any user |
+| POST | `/api/v1/ai/articles/summarize` | Summarize content | Any user |
+| POST | `/api/v1/ai/events/discover` | Discover events | Any user |
+| POST | `/api/v1/ai/complaints/insights` | Complaint insights | Any user |
+| POST | `/api/v1/ai/community/query` | Community queries | Any user |
+
+Database
+
+- None (stateless service — reads data from other services via Feign)
+
+Port
+
+- 8086
+
+---
+
 ## ✅ Notification Service
 
 Responsibilities
@@ -232,6 +304,7 @@ cd user-service && mvn spring-boot:run
 cd complaint-service && mvn spring-boot:run
 cd community-service && mvn spring-boot:run
 cd notification-service && mvn spring-boot:run
+cd ai-service && mvn spring-boot:run  # Optional — requires AI_API_KEY
 
 # 3. API Gateway (single entry point on :8080)
 cd api-gateway && mvn spring-boot:run
@@ -369,6 +442,50 @@ enumeration).
    cooldown), or open the login page and use **Resend verification email**.
 
 ---
+# 🤖 AI Configuration (v2.1.0)
+
+The AI Service integrates with any **OpenAI-compatible API** provider. Set the following
+environment variables before starting the AI service:
+
+```bash
+# Enable AI features (disabled by default)
+export AI_ENABLED=true
+
+# AI provider credentials
+export AI_API_KEY=your-api-key-here
+export AI_MODEL=gpt-4o-mini
+export AI_BASE_URL=https://api.openai.com/v1
+
+# Optional tuning
+export AI_MAX_TOKENS=1024
+export AI_TEMPERATURE=0.7
+export AI_TIMEOUT_SECONDS=30
+```
+
+**Supported providers:**
+
+| Provider | Base URL | Model Examples |
+|----------|----------|----------------|
+| OpenAI | `https://api.openai.com/v1` | `gpt-4o-mini`, `gpt-4o` |
+| Groq | `https://api.groq.com/openai/v1` | `llama-3.3-70b-versatile` |
+| Together AI | `https://api.together.xyz/v1` | `meta-llama/Llama-3-70b-chat-hf` |
+| Ollama (local) | `http://localhost:11434/v1` | `llama3`, `mistral` |
+| Azure OpenAI | `https://<resource>.openai.azure.com/openai/deployments/<model>` | `gpt-4o-mini` |
+
+**When `AI_ENABLED=false`** (default), the AI service starts normally but all endpoints
+return a friendly "AI is disabled" message. The rest of the platform operates normally.
+
+For Docker deployment, add the AI variables to your `.env` file:
+
+```bash
+AI_ENABLED=false
+AI_API_KEY=
+AI_MODEL=gpt-4o-mini
+AI_BASE_URL=https://api.openai.com/v1
+```
+
+---
+
 # 🔄 Inter-Service Communication
 
 Current Communication
@@ -528,22 +645,31 @@ event/drive is published.
 
 ---
 
-## 📋 v2.1.0 — AI Capabilities *(Planned)*
+## ✅ v2.1.0 — AI Capabilities *(Implemented)*
 
-A planned enhancement **after the NGO/event data foundation is implemented**.
-Planned AI capabilities include:
+Implemented as a dedicated **AI Service** microservice with:
 
-- NGO discovery and queries.
-- Event and drive discovery.
-- Articles and community-related queries.
-- Complaint and community insights.
-- User assistance and general platform queries.
-- NGO assistance such as event descriptions, summaries, activity insights, and
-  related operational queries.
-- Admin/community analytics and intelligent insights where appropriate.
-
-AI capabilities will be built on top of the **structured platform data** created
-by the NGO, event, drive, article, and complaint systems.
+- **User AI Assistant:** Natural-language queries about NGOs, events, drives, articles,
+  complaints, and platform usage.
+- **NGO AI Assistant:** Drive summaries, volunteer insights, activity analytics,
+  event description generation, and article draft creation.
+- **Admin AI Assistant:** Platform-wide complaint analytics, hotspot identification,
+  recurring issue detection, NGO activity summaries, and trend analysis.
+- **Article Assistance:** AI-assisted article drafting and content generation.
+- **Event/Drive Discovery:** Natural-language search for upcoming events and drives.
+- **Complaint Intelligence:** Complaint volume analysis, geographic hotspot detection,
+  overdue identification, and priority distribution insights.
+- **Community Intelligence:** Cross-domain queries combining NGOs, events, drives,
+  articles, and complaints.
+- **Infrastructure Intelligence:** Natural-language queries about pipelines, lakes,
+  treatment plants (STPs), operational status, maintenance history, and water reuse.
+- **Data Grounding:** All platform-specific answers are grounded in actual data —
+  the AI retrieves structured data before generating responses to prevent hallucination.
+- **Configurable AI Provider:** Works with any OpenAI-compatible API (OpenAI, Groq,
+  Together AI, Azure OpenAI, local Ollama, etc.).
+- **Floating Chat Widget:** Available on all authenticated dashboards (citizen, admin, NGO).
+- **Article Generator:** Dedicated article generation workflow in the NGO dashboard.
+- **AI-Enabled Toggle:** Platform works normally with `AI_ENABLED=false`.
 
 ---
 
@@ -571,5 +697,5 @@ A future major release, not part of v2.0.0, including:
 | v1.1.x | Resolution proof + UX/content cleanup | ✅ Partially implemented |
 | v1.2.0 | Responsive/mobile-friendly web experience | 📋 Planned |
 | v2.0.0 | NGO ecosystem, events, drives, approvals and user participation | 📋 Planned |
-| v2.1.0 | AI-powered platform capabilities | 📋 Planned |
+| v2.1.0 | AI-powered platform capabilities | ✅ Implemented |
 | v3.0.0 | Dedicated mobile application | 📋 Planned |

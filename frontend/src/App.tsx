@@ -53,8 +53,11 @@ import { NgoAchievements } from "@/pages/ngo/NgoAchievements";
 import { NgoProgressPage } from "@/pages/ngo/NgoProgress";
 import { NgoFunds } from "@/pages/ngo/NgoFunds";
 import { NgoParticipants } from "@/pages/ngo/NgoParticipants";
+import { AiAssistantPage as NgoAiPage } from "@/pages/ngo/AiAssistantPage";
 import { MyEventsPage } from "@/pages/dashboard/MyEvents";
 import { RequireNgoRepresentative } from "@/components/layout/RouteGuards";
+import { AiAssistantPage as CitizenAiPage } from "@/pages/dashboard/AiAssistantPage";
+import { AiAssistantPage as AdminAiPage } from "@/pages/admin/AiAssistantPage";
 
 export default function App() {
   return (
@@ -126,6 +129,7 @@ export default function App() {
               <Route path="complaints" element={<MyComplaints />} />
               <Route path="complaints/:id" element={<ComplaintDetailPage />} />
               <Route path="my-events" element={<MyEventsPage />} />
+              <Route path="ai" element={<CitizenAiPage />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
             </Route>
@@ -160,6 +164,7 @@ export default function App() {
               <Route path="hotspots" element={<HotspotMapPage />} />
               <Route path="complaints" element={<ManageComplaints />} />
               <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="ai-assistant" element={<AdminAiPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="ngo-applications" element={<AdminNgoApplications />} />
               <Route path="community/events" element={<EventsPage />} />
@@ -187,6 +192,7 @@ export default function App() {
               <Route path="progress" element={<NgoProgressPage />} />
               <Route path="funds" element={<NgoFunds />} />
               <Route path="participants" element={<NgoParticipants />} />
+              <Route path="ai" element={<NgoAiPage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

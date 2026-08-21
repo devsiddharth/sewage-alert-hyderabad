@@ -558,3 +558,34 @@ export interface ComplaintAnalytics {
   avgResolutionDays: number | null;
   highestArea: HighestArea | null;
 }
+
+// ---------------------------------------------------------------------------
+// AI Assistant types (v2.1.0)
+// ---------------------------------------------------------------------------
+
+export type AiIntent =
+  | "NGO_DISCOVERY"
+  | "EVENT_DISCOVERY"
+  | "DRIVE_DISCOVERY"
+  | "ARTICLE_QUERY"
+  | "ARTICLE_GENERATION"
+  | "COMPLAINT_QUERY"
+  | "COMPLAINT_INSIGHTS"
+  | "COMMUNITY_QUERY"
+  | "USER_HELP"
+  | "NGO_ANALYTICS"
+  | "ADMIN_ANALYTICS"
+  | "EVENT_DESCRIPTION_GENERATION"
+  | "SUMMARY_GENERATION"
+  | "GENERAL_PLATFORM_QUERY";
+
+export interface AiChatRequest {
+  message: string;
+}
+
+export interface AiChatResponse {
+  response: string;
+  intent: AiIntent;
+  dataUsed: boolean;
+  suggestion: string | null;
+}

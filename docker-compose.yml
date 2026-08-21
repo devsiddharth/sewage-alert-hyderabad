@@ -254,6 +254,28 @@ services:
     networks: [backend]
     restart: unless-stopped
 
+  # ── AI Service (port 8086) — AI assistant, intent detection, data grounding ──
+  ai-service:
+    build:
+      context: .
+      dockerfile: ai-service/Dockerfile
+    image: sewagealert/ai-service:latest
+    container_name: sewagealert-ai-service
+    depends_on:
+      eureka-server:
+        condition: service_started
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-qwen/qwen3.6-27b}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.groq.com/openai/v1}
+    ports:
+      - "8086:8086"
+    networks: [backend]
+    restart: unless-stopped
+
 networks:
   backend:
     driver: bridge
