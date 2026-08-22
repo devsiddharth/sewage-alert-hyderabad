@@ -128,8 +128,9 @@ The following stakeholders are involved in or benefit from the SewageAlert Hyder
 | --- | --- |
 | **Citizens** | Report sewage issues, track complaints, access educational content, and participate in awareness events. |
 | **Municipal Authorities (GHMC/HMWSSB)** | Review complaints, update complaint status, manage infrastructure information, and organize awareness initiatives. |
-| **System Administrator** | Manage users, authorities, NGOs, and overall system configuration. |
-| **Non-Governmental Organizations (NGOs)** | Collaborate with authorities to conduct awareness campaigns and community events. |
+| **System Administrator** | Manage users, authorities, NGOs, and overall system configuration. Review and approve NGO applications. |
+| **Non-Governmental Organizations (NGOs)** | Apply for verification, manage events and drives, track participation, and engage with the community. |
+| **NGO Representatives** | Manage their organization's profile, create events, and track community engagement. |
 | **Government Bodies** | Use reports and analytics to support planning and decision-making. |
 | **Development Team** | Design, develop, test, deploy, and maintain the application. |
 
@@ -200,23 +201,48 @@ Administrators manage the overall platform, ensuring smooth operation, user mana
 - Configure system settings
 - Manage dashboards
 - Maintain master data
+- Review and approve NGO applications (v2.5.0)
+- Suspend or reactivate NGO accounts (v2.5.0)
+
+---
+
+## 4. NGO Representative (v2.5.0)
+
+### Description
+
+NGO Representatives are authorized users who manage their organization's presence on the platform, including events, drives, and community engagement activities.
+
+### Responsibilities
+
+- Apply as an NGO through public application form
+- Manage NGO profile and organization information
+- Create and manage events and drives
+- Track participant registrations
+- Manage achievements and milestones
+- View transparency records (funds and expenses)
+- Access NGO dashboard for analytics
+- Use AI assistant for content generation
 
 ---
 
 # Access Summary
 
-| Feature | Citizen | Authority | Admin |
-| --- | --- | --- | --- |
-| Register/Login | ✅ | ✅ | ✅ |
-| Submit Complaint | ✅ | ❌ | ❌ |
-| Track Complaint | ✅ | ✅ | ✅ |
-| Update Complaint Status | ❌ | ✅ | ✅ |
-| Create Awareness Events | ❌ | ✅ | ✅ |
-| Register for Events | ✅ | ❌ | ❌ |
-| Publish Articles | ❌ | ✅ | ✅ |
-| Manage Users | ❌ | ❌ | ✅ |
-| Manage NGOs | ❌ | ❌ | ✅ |
-| View Reports | ❌ | ✅ | ✅ |
+| Feature | Citizen | Authority | Admin | NGO Rep |
+| --- | --- | --- | --- | --- |
+| Register/Login | ✅ | ✅ | ✅ | ✅ |
+| Submit Complaint | ✅ | ❌ | ❌ | ❌ |
+| Track Complaint | ✅ | ✅ | ✅ | ❌ |
+| Update Complaint Status | ❌ | ✅ | ✅ | ❌ |
+| Create Awareness Events | ❌ | ✅ | ✅ | ✅ |
+| Register for Events | ✅ | ❌ | ❌ | ✅ |
+| Publish Articles | ❌ | ✅ | ✅ | ✅ |
+| Manage Users | ❌ | ❌ | ✅ | ❌ |
+| Manage NGOs | ❌ | ❌ | ✅ | ❌ |
+| View Reports | ❌ | ✅ | ✅ | ✅ |
+| Submit NGO Application | ✅ | ❌ | ❌ | ❌ |
+| Manage NGO Profile | ❌ | ❌ | ❌ | ✅ |
+| NGO Dashboard | ❌ | ❌ | ❌ | ✅ |
+| Approve/Reject NGO Applications | ❌ | ❌ | ✅ | ❌ |
 
 ## Functional Requirements
 
@@ -323,7 +349,21 @@ The system shall allow:
 
 ---
 
-## 8. Notification Management
+## 8. NGO Application & Verification (v2.5.0)
+
+The system shall allow:
+
+- Public NGO applications without requiring account creation
+- Comprehensive application forms with organization details
+- Admin review workflow with status tracking (PENDING → UNDER_REVIEW → APPROVED/REJECTED/SUSPENDED)
+- Auto account provisioning on approval
+- NGO dashboard access management
+- Suspension and reactivation of NGO accounts
+- Email notifications for application status changes
+
+---
+
+## 9. Notification Management
 
 The system shall send:
 

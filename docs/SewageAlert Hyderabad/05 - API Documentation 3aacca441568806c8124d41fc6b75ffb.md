@@ -157,6 +157,22 @@ Content-Type: image/jpeg
 | PUT | `/api/v1/ngos/{id}` |
 | DELETE | `/api/v1/ngos/{id}` |
 
+### NGO Application & Management (v2.5.0)
+
+| Method | Endpoint | Description | Access |
+| --- | --- | --- | --- |
+| POST | `/api/v1/ngo/apply/public` | Submit NGO application (public) | None |
+| POST | `/api/v1/ngo/apply` | Submit NGO application (authenticated) | Any user |
+| GET | `/api/v1/ngo/my` | Get my NGO organization | NGO Rep |
+| PUT | `/api/v1/ngo/my` | Update my NGO profile | NGO Rep |
+| GET | `/api/v1/ngo/dashboard` | Get NGO dashboard overview | NGO Rep |
+| GET | `/api/v1/ngo/admin/all` | List all NGO applications | Admin |
+| GET | `/api/v1/ngo/admin/{ngoId}` | Get NGO application details | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/approve` | Approve NGO application | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/reject` | Reject NGO application | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/suspend` | Suspend an NGO | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/reactivate` | Reactivate a suspended NGO | Admin |
+
 ---
 
 # 6️⃣ Notification APIs

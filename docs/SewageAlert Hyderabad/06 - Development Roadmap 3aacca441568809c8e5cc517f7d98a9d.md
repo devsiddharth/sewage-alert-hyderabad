@@ -5,12 +5,12 @@
 | Phase | Duration | Status |
 | --- | --- | --- |
 | Documentation | ✅ Completed | ✅ |
-| Project Setup | Planned | ⏳ |
-| Backend Development | Planned | ⏳ |
-| Frontend Development | Planned | ⏳ |
-| Integration | Planned | ⏳ |
-| Testing | Planned | ⏳ |
-| Deployment | Planned | ⏳ |
+| Project Setup | ✅ Completed | ✅ |
+| Backend Development | ✅ Completed | ✅ |
+| Frontend Development | ✅ Completed | ✅ |
+| Integration | ✅ Completed | ✅ |
+| Testing | ✅ In Progress | 🔄 |
+| Deployment | ✅ Completed | ✅ |
 
 ---
 
@@ -90,15 +90,17 @@
 
 # 3️⃣ Milestones
 
-| Milestone | Goal |
-| --- | --- |
-| M1 | Documentation Complete |
-| M2 | Authentication Complete |
-| M3 | Complaint Module Complete |
-| M4 | Community Module Complete |
-| M5 | Frontend Complete |
-| M6 | Testing Complete |
-| M7 | Deployment Complete |
+| Milestone | Goal | Status |
+| --- | --- | --- |
+| M1 | Documentation Complete | ✅ Complete |
+| M2 | Authentication Complete | ✅ Complete |
+| M3 | Complaint Module Complete | ✅ Complete |
+| M4 | Community Module Complete | ✅ Complete |
+| M5 | Frontend Complete | ✅ Complete |
+| M6 | Testing Complete | 🔄 In Progress |
+| M7 | Deployment Complete | ✅ Complete |
+| M8 | AI Service Complete | ✅ Complete |
+| M9 | NGO Application Flow Complete | ✅ Complete |
 
 ---
 
