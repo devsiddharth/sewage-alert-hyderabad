@@ -592,17 +592,20 @@ The **current production release**. The core platform is **deployed and operatio
 
 ---
 
-## 📋 v1.2.0 — Responsive Web Experience *(Planned)*
+## ✅ v1.2.0 — Responsive Web Experience *(Implemented)*
 
-- Make the existing React web application fully responsive and mobile-friendly
-  across phones, tablets, and desktops.
-- Improve mobile navigation, forms, complaint reporting, image uploads,
+Implemented with comprehensive UI improvements:
+
+- Fully responsive and mobile-friendly web application across phones, tablets, and desktops.
+- Improved mobile navigation, forms, complaint reporting, image uploads,
   dashboards, tables, modals, maps, notifications, and other relevant UI components.
 - Serves as the foundation for the future mobile application.
 
 ---
 
-## 📋 v2.0.0 — NGO & Community Engagement Platform *(Next Major Release — Planned)*
+## ✅ v2.0.0 — NGO & Community Engagement Platform *(Implemented)*
+
+Implemented as part of the **Community Service** microservice with:
 
 ### NGO Authentication & Dashboard
 
@@ -673,6 +676,55 @@ Implemented as a dedicated **AI Service** microservice with:
 
 ---
 
+## ✅ v2.5.0 — Public NGO Application Flow *(Implemented)*
+
+Implemented as a **public-facing NGO application system** with automatic account provisioning:
+
+### Public Application Flow
+
+- **No account required:** NGOs can apply through a public form without needing to create an account first.
+- **Comprehensive application form:** Organizations submit detailed information including:
+  - Organization details (name, email, phone, registration number, website, address)
+  - Mission statement and areas of focus
+  - Operating areas and communities served
+  - Contact person information
+  - Password setup for future dashboard access
+
+### Admin Review Workflow
+
+- **Application management dashboard:** Admins can view, filter, and search all NGO applications.
+- **Status tracking:** Applications go through statuses: PENDING → UNDER_REVIEW → APPROVED/REJECTED/SUSPENDED.
+- **Approval actions:**
+  - **Approve:** Auto-provisions NGO account with the password set during application.
+  - **Reject:** Requires rejection reason; applicant is notified.
+  - **Suspend:** Revokes dashboard access for approved NGOs.
+  - **Reactivate:** Restores access for suspended NGOs.
+
+### Auto Account Provisioning
+
+- On approval, the system automatically creates an NGO user account.
+- The password submitted during application is used for the new account.
+- NGO representatives receive login credentials via email.
+- Immediate access to the NGO dashboard upon approval.
+
+### API Endpoints
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| POST | `/api/v1/ngo/apply/public` | Submit NGO application (public) | None |
+| POST | `/api/v1/ngo/apply` | Submit NGO application (authenticated) | Any user |
+| GET | `/api/v1/ngo/my` | Get my NGO organization | NGO Rep |
+| PUT | `/api/v1/ngo/my` | Update my NGO profile | NGO Rep |
+| GET | `/api/v1/ngo/dashboard` | Get NGO dashboard overview | NGO Rep |
+| GET | `/api/v1/ngo/admin/all` | List all NGO applications | Admin |
+| GET | `/api/v1/ngo/admin/{ngoId}` | Get NGO application details | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/approve` | Approve NGO application | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/reject` | Reject NGO application | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/suspend` | Suspend an NGO | Admin |
+| POST | `/api/v1/ngo/admin/{ngoId}/reactivate` | Reactivate a suspended NGO | Admin |
+
+---
+
 ## 📋 v3.0.0 — Mobile Application *(Future Major Release — Planned)*
 
 A future major release, not part of v2.0.0, including:
@@ -694,8 +746,9 @@ A future major release, not part of v2.0.0, including:
 | Version | Planned Focus | Status |
 |---------|---------------|--------|
 | v1.0.0 | Production release and core platform | ✅ Released |
-| v1.1.x | Resolution proof + UX/content cleanup | ✅ Partially implemented |
-| v1.2.0 | Responsive/mobile-friendly web experience | 📋 Planned |
-| v2.0.0 | NGO ecosystem, events, drives, approvals and user participation | 📋 Planned |
+| v1.1.x | Resolution proof + UX/content cleanup | ✅ Implemented |
+| v1.2.0 | Responsive/mobile-friendly web experience | ✅ Implemented |
+| v2.0.0 | NGO ecosystem, events, drives, approvals and user participation | ✅ Implemented |
 | v2.1.0 | AI-powered platform capabilities | ✅ Implemented |
+| v2.5.0 | Public NGO application flow and auto account provisioning | ✅ Implemented |
 | v3.0.0 | Dedicated mobile application | 📋 Planned |
